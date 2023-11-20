@@ -1,3 +1,3 @@
-data_directory = 'fill in appropriately'
-code_directory = 'fill in appropriately'
+data_directory = './data'
+code_directory = '.'
 training_directory = 'fill in appropriately'
