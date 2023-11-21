@@ -3,6 +3,7 @@ import numpy as np
 import cv2 as cv
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 from config import data_directory
 
 def train_model(x_train, y_train):
@@ -46,10 +47,19 @@ if __name__ == "__main__":
     faces = resize_images(load_images(faces_dir))
     nonfaces = resize_images(load_images(nonfaces_dir))
 
-    face_labels = [1] * len(faces)
-    non_face_labels = [0] * len(nonfaces)
-
     x_train = np.array(faces + nonfaces)
-    y_train = np.array(face_labels + non_face_labels)
+    y_train = np.concatenate((np.ones(len(faces)), np.zeros(len(nonfaces))), axis=0)
 
     model = train_model(x_train, y_train)
+
+    test_f = os.path.join(data_directory, "test_cropped_faces")
+    test_faces = resize_images(load_images(test_f))
+    test_nf = os.path.join(data_directory, "test_nonfaces")
+    test_nfaces = resize_images(load_images(test_nf))
+    imgs = np.array(test_faces + test_nfaces)
+
+    pred = model.predict(imgs)
+    labels = np.concatenate((np.ones(len(test_faces)), np.zeros(len(test_nfaces))), axis=0)
+    print(accuracy_score(labels, pred))
+    print(confusion_matrix(labels, pred))
+    print(classification_report(labels, pred))
