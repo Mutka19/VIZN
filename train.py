@@ -5,6 +5,7 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.tree import DecisionTreeClassifier
 from config import data_directory
 
+
 def train_model(x_train, y_train):
     clf = AdaBoostClassifier(
         DecisionTreeClassifier(max_depth=1), 
