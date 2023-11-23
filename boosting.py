@@ -438,8 +438,6 @@ def weighted_error(responses, labels, weights, classifier):
     # Handle case where all responses are the same to avoid errors
     if(maximum == minimum):
         return 0.5, 0, 0
-    print(classifier_responses)
-    print(f"Minimum: {minimum}, Maximum: {maximum}, Step: {step}")
 
     for threshold in np.arange(minimum, maximum + step, step):
         thresholded = (classifier_responses > threshold).astype(np.float32)
@@ -526,8 +524,8 @@ def adaboost(responses, labels, rounds):
         thresholded = (boosted_responses > 0).astype(np.float32)
         thresholded[thresholded == 0] = -1
         error = np.mean(thresholded != labels)
-        print(f"Round: {round + 1}, Error: {error}, Best Error: {best_error}, "
-              f"Best Classifier: {best_classifier}, Alpha: {alpha}, Threshold: {threshold}")
+        # print(f"Round: {round + 1}, Error: {error}, Best Error: {best_error}, "
+        #       f"Best Classifier: {best_classifier}, Alpha: {alpha}, Threshold: {threshold}")
 
 
     return result
