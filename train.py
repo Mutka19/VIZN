@@ -23,6 +23,21 @@ def load_images_from_folder(folder_path, size=(50, 50)):
     return np.array(images)
 
 def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizontal=25, num_classifiers = 15):
+    """
+    Trains an AdaBoost model on the given data.
+    Args:
+        faces (numpy.array): The input of face images used to train the model
+        nonfaces (numpy.array): The input of nonface images used to train the model
+        weak_count (int): Number of weak classifiers to be created when training the model
+        face_vertical (int): size of each face image in the vertical 'y' direction
+        face_horozontal (int): size of each face image in the horozontal 'x' direction
+        num_classifiers (int): Number of top classifiers to choose from
+
+    Returns:
+        boosted_classifier: A list of tuples where each tuple contains the index, alpha, and threshold of each classifier
+        extracted_classifiers: a list of the top classifiers and their important information in JSON format
+    """
+
     # Generate specified number of weak classifiers
     weak_classifiers = [generate_classifier(face_vertical, face_horizontal) for _ in range(weak_count)]
 
