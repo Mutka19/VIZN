@@ -427,6 +427,7 @@ def weighted_error(responses, labels, weights, classifier):
     Compute the best threshold for a given classifier,
     along with the corresponding weighted error and alpha value for AdaBoost.
     """
+    
     classifier_responses = responses[:, classifier]
     minimum = np.min(classifier_responses)
     maximum = np.max(classifier_responses)
@@ -434,6 +435,11 @@ def weighted_error(responses, labels, weights, classifier):
     best_error = 1.0
     best_threshold = None
     best_direction = None
+    # Handle case where all responses are the same to avoid errors
+    if(maximum == minimum):
+        return 0.5, 0, 0
+    print(classifier_responses)
+    print(f"Minimum: {minimum}, Maximum: {maximum}, Step: {step}")
 
     for threshold in np.arange(minimum, maximum + step, step):
         thresholded = (classifier_responses > threshold).astype(np.float32)
