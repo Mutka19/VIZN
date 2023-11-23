@@ -1,3 +1,8 @@
+# Prevent pycache from being pushed to repo
 __pycache__
-testing.ipynb
-*.zip
+
+# Prevent notebook files used for testing from being pushed to repo
+*.ipynb
+
+# Prevent zip files with redundant data from being pushed to repo
+data/*.zip
