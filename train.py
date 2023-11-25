@@ -34,7 +34,7 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
         num_classifiers (int): Number of top classifiers to choose from
 
     Returns:
-        boosted_classifier: A list of tuples where each tuple contains the index, alpha, and threshold of each classifier
+        reordered_classifiers: A list of tuples where each tuple contains the index, alpha, and threshold of each classifier
         extracted_classifiers: a list of the top classifiers and their important information in JSON format
     """
 
@@ -82,10 +82,11 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
     # Get indices for N best best classifiers
     classifiers_indices = [i[0] for i in boosted_classifier]
     extracted_classifiers = [weak_classifiers[i] for i in classifiers_indices]
-    for i in range(boosted_classifier):
-        boosted_classifier[i][0] = i
+    reordered_classifiers = []
+    for i in range(len(boosted_classifier)):
+        reordered_classifiers.append((i, boosted_classifier[i][1], boosted_classifier[i][2]))
 
-    return boosted_classifier, extracted_classifiers
+    return reordered_classifiers, extracted_classifiers
             
 
 if __name__ == "__main__":
@@ -95,7 +96,4 @@ if __name__ == "__main__":
     faces = load_images_from_folder(faces_dir)
     nonfaces = load_images_from_folder(nonfaces_dir)
 
-    x_train = np.array(faces + nonfaces)
-    y_train = np.concatenate((np.ones(len(faces)), np.zeros(len(nonfaces))), axis=0)
-
-    model = train_model(x_train, y_train)
+    model = train_model(faces, nonfaces)
