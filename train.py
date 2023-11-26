@@ -6,6 +6,7 @@ from boosting import generate_classifier
 from boosting import eval_weak_classifier
 from boosting import adaboost
 from config import data_directory
+import pickle
 
 def load_and_process_image(file_path, size=(50, 50)):
     """Load an image, convert it to grayscale, and resize."""
@@ -85,6 +86,22 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
     reordered_classifiers = []
     for i in range(len(boosted_classifier)):
         reordered_classifiers.append((i, boosted_classifier[i][1], boosted_classifier[i][2]))
+
+    model_data = {
+        'classifiers': reordered_classifiers,
+        'extracted_classifiers': extracted_classifiers,
+        # Include any other relevant data you want to save
+    }
+
+    # Specify the folder path
+    folder_path = 'Training'  # Adjust this path as per your requirement
+    # Specify the file name
+    file_name = 'face_detection_model.pkl'
+    # Combine the folder path and file name to get the full path
+    full_file_path = os.path.join(folder_path, file_name)
+    # Use the full path when opening the file
+    with open(full_file_path, 'wb') as file:
+        pickle.dump(model_data, file)
 
     return reordered_classifiers, extracted_classifiers
             
