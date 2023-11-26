@@ -1,8 +1,8 @@
 import os
 import cv2
 import pickle
-from config import data_directory
-from boosting import integral_image, eval_weak_classifier, adaboost
+from config import data_directory, training_directory
+from boosting import integral_image, eval_weak_classifier
 import importlib.util
 
 # Importing face annotations dynamically from a given file path
@@ -14,11 +14,8 @@ def import_annotations(annotations_path):
 
 # Load the trained model from a pickle file
 def load_model(model_name='face_detection_model.pkl'):
-    # Path to the Training folder
-    folder_path = 'Training'  # or './Training'
-
     # Full file path
-    full_file_path = os.path.join(folder_path, model_name)
+    full_file_path = os.path.join(training_directory, model_name)
 
     # Load the model
     with open(full_file_path, 'rb') as file:
