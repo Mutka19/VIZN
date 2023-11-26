@@ -93,6 +93,7 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
         # Include any other relevant data you want to save
     }
 
+    print(reordered_classifiers, extracted_classifiers)
     # Specify the folder path
     folder_path = 'Training'  # Adjust this path as per your requirement
     # Specify the file name
@@ -102,6 +103,8 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
     # Use the full path when opening the file
     with open(full_file_path, 'wb') as file:
         pickle.dump(model_data, file)
+
+    
 
     return reordered_classifiers, extracted_classifiers
             
