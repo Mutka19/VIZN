@@ -79,22 +79,79 @@ def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, s
     # TODO: Implement Non-Max Suppression to handle overlapping detections
     return detected_faces
 
+def calculate_precision_recall(true_positives, false_positives, false_negatives):
+    """
+    Calculate precision and recall from true positives, false positives, and false negatives.
+    """
+    precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
+    recall = true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
+    return precision, recall
+
+
+def load_test_images(directory):
+    """
+    Loads all images from the specified directory without resizing.
+    Args:
+        directory (str): Path to the directory containing images.
+    Returns:
+        List[Tuple[str, numpy.ndarray]]: A list of tuples, where each tuple contains
+                                         the file name and the image data as a numpy array.
+    """
+    images = []
+    for file_name in os.listdir(directory):
+        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+            file_path = os.path.join(directory, file_name)
+            image = cv2.imread(file_path, cv2.IMREAD_COLOR)
+            if image is not None:
+                images.append((file_name, image))
+    return images
+
+
+def test_cropped_faces(directory, classifiers, extracted_classifiers):
+    cropped_images = load_test_images(directory)
+    true_positives = 0
+    false_negatives = 0
+
+    for file_name, image in cropped_images:
+        detected_faces = detect_faces(image, classifiers, extracted_classifiers)
+        if len(detected_faces) > 0:
+            true_positives += 1
+        else:
+            false_negatives += 1
+
+    return true_positives, false_negatives
+
+def test_nonfaces(directory, classifiers, extracted_classifiers):
+    nonface_images = load_test_images(directory)
+    false_positives = 0
+
+    for file_name, image in nonface_images:
+        detected_faces = detect_faces(image, classifiers, extracted_classifiers)
+        if len(detected_faces) > 0:
+            false_positives += 1
+
+    return false_positives
+
+
 # The main function processes each annotated image and evaluates the detections
 def main():
-    true_positive_count = 0
-    false_positive_count = 0
-    false_negative_count = 0
-
-    # Load annotations and model data
-    annotations = import_annotations(os.path.join(data_directory, 'test_face_photos', 'face_annotations.py'))
+    # Load model data
     model_data = load_model()
     classifiers = model_data['classifiers']
     extracted_classifiers = model_data['extracted_classifiers']
 
+    # Datasets
+    face_photos_dir = os.path.join(data_directory, 'test_face_photos')
+    cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
+    nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
+
+    # Testing on Face Photos
+    annotations = import_annotations(os.path.join(face_photos_dir, 'face_annotations.py'))
+    tp_face_photos, fp_face_photos, fn_face_photos = 0, 0, 0
     for annotation in annotations:
         photo_file_name = annotation['photo_file_name']
         true_faces = annotation['faces']
-        image_path = os.path.join(data_directory, 'test_face_photos', photo_file_name)
+        image_path = os.path.join(face_photos_dir, photo_file_name)
         image = cv2.imread(image_path)
 
         if image is not None:
@@ -106,22 +163,31 @@ def main():
                 for idx, true_box in enumerate(true_faces):
                     iou = calculate_iou(detected_box, true_box)
                     if iou > 0.5:
-                        true_positive_count += 1
+                        tp_face_photos += 1
                         detected_flags[idx] = True
                         match_found = True
                         break
-                
                 if not match_found:
-                    false_positive_count += 1
+                    fp_face_photos += 1
 
-            false_negative_count += detected_flags.count(False)
-        else:
-            print(f"Failed to load image: {photo_file_name}")
+            fn_face_photos += detected_flags.count(False)
+
+    # Testing on Cropped Faces and Nonfaces
+    tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, classifiers, extracted_classifiers)
+    fp_nonfaces = test_nonfaces(nonfaces_dir, classifiers, extracted_classifiers)
+    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces  # Calculate True Negatives in test_nonfaces
 
     # Output performance metrics
-    print(f"True Positives: {true_positive_count}")
-    print(f"False Positives: {false_positive_count}")
-    print(f"False Negatives: {false_negative_count}")
+    print("Dataset: Test Face Photos")
+    print(f"True Positives: {tp_face_photos}, False Positives: {fp_face_photos}, False Negatives: {fn_face_photos}")
+    print("Assumption: This dataset contains both faces and non-faces.")
+    print("\nDataset: Test Cropped Faces")
+    print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}, False Positives: 0, True Negatives: 0")
+    print("Assumption: This dataset contains only faces. No false positives or true negatives expected.")
+    print("\nDataset: Test Nonfaces")
+    print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}, True Positives: 0, False Negatives: 0")
+    print("Assumption: This dataset contains only non-faces. No true positives or false negatives expected.")
 
 if __name__ == "__main__":
     main()
+
