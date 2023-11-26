@@ -5,7 +5,7 @@ from boosting import integral_image
 from boosting import generate_classifier
 from boosting import eval_weak_classifier
 from boosting import adaboost
-from config import data_directory
+from config import data_directory, training_directory
 import pickle
 
 def load_and_process_image(file_path, size=(50, 50)):
@@ -13,6 +13,7 @@ def load_and_process_image(file_path, size=(50, 50)):
     img = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
     img_resized = cv.resize(img, size)
     return img_resized[14:45, 12:37]
+
 
 def load_images_from_folder(folder_path, size=(50, 50)):
     """Load all images from the specified folder."""
@@ -22,6 +23,29 @@ def load_images_from_folder(folder_path, size=(50, 50)):
             file_path = os.path.join(folder_path, file_name)
             images.append(load_and_process_image(file_path, size))
     return np.array(images)
+
+
+def save_model(model):
+    """
+    Takes model data and saves it to training directory.
+    Args:
+        model: Trained adaboost model containing classifier data and their shapes
+    """
+    model_data = {
+        'classifiers': model[0],
+        'extracted_classifiers': model[1],
+    }
+
+    # Specify the file name
+    file_name = 'face_detection_model.pkl'
+
+    # Combine the folder path and file name to get the full path
+    full_file_path = os.path.join(training_directory, file_name)
+
+    # Use the full path when opening the file
+    with open(full_file_path, 'wb') as file:
+        pickle.dump(model_data, file)
+
 
 def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizontal=25, num_classifiers = 15):
     """
@@ -87,22 +111,6 @@ def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizon
     for i in range(len(boosted_classifier)):
         reordered_classifiers.append((i, boosted_classifier[i][1], boosted_classifier[i][2]))
 
-    model_data = {
-        'classifiers': reordered_classifiers,
-        'extracted_classifiers': extracted_classifiers,
-        # Include any other relevant data you want to save
-    }
-
-    # Specify the folder path
-    folder_path = 'Training'  # Adjust this path as per your requirement
-    # Specify the file name
-    file_name = 'face_detection_model.pkl'
-    # Combine the folder path and file name to get the full path
-    full_file_path = os.path.join(folder_path, file_name)
-    # Use the full path when opening the file
-    with open(full_file_path, 'wb') as file:
-        pickle.dump(model_data, file)
-
     return reordered_classifiers, extracted_classifiers
             
 
@@ -114,3 +122,5 @@ if __name__ == "__main__":
     nonfaces = load_images_from_folder(nonfaces_dir)
 
     model = train_model(faces, nonfaces)
+
+    save_model(model)
