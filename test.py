@@ -102,12 +102,35 @@ def non_max_suppression_fast(boxes, overlapThresh):
     return boxes[pick].astype("int")
 
 
+def refine_skin_mask(hsv_image):
+    # Define a new, more specific range for skin color
+    lower_skin = np.array([0, 58, 30], dtype="uint8")
+    upper_skin = np.array([33, 255, 255], dtype="uint8")
+
+    # Create initial skin mask
+    skin_mask = cv2.inRange(hsv_image, lower_skin, upper_skin)
+
+    # Apply a series of erosions and dilations to the mask
+    # using an elliptical kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
+    skin_mask = cv2.erode(skin_mask, kernel, iterations=2)
+    skin_mask = cv2.dilate(skin_mask, kernel, iterations=2)
+
+    # Blur the mask to help remove noise
+    skin_mask = cv2.GaussianBlur(skin_mask, (9, 9), 0)
+
+    return skin_mask
 
 # Detect faces in an image using a trained AdaBoost model
 def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, step_size=5, overlapThresh=0.3):
     detected_faces = []
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
+
+    # Convert to HSV for skin detection
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    skin_mask = refine_skin_mask(hsv_image)
+
     # Initial window size should match the trained classifier input
     window_size = (50, 50)
     current_scale = 1.0
@@ -130,7 +153,10 @@ def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, s
                 
                 # Face detection based on threshold
                 if sum_alpha >= threshold:
-                    detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
+                    # Check if the majority of the area in the bounding box is skin
+                    face_region = skin_mask[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
+                    if cv2.countNonZero(face_region) > (0.5 * scaled_window_size[0] * scaled_window_size[1]):  # 50% skin threshold
+                        detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
         
         current_scale *= scale_factor
 
@@ -139,6 +165,7 @@ def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, s
         detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
 
     return detected_faces
+
 
 def calculate_precision_recall(true_positives, false_positives, false_negatives):
     """
