@@ -1,8 +1,9 @@
 import os
 import cv2
 import pickle
-from config import data_directory, training_directory
-from boosting import integral_image, eval_weak_classifier
+from config import data_directory, training_directory, code_directory
+from boosting import boosted_predict
+from skin_detection import detect_skin
 import importlib.util
 import numpy as np
 
@@ -132,7 +133,7 @@ def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, s
     skin_mask = refine_skin_mask(hsv_image)
 
     # Initial window size should match the trained classifier input
-    window_size = (50, 50)
+    window_size = (25, 31)
     current_scale = 1.0
     
     # Sliding window approach with scaling
@@ -143,16 +144,12 @@ def detect_faces(image, classifiers, extracted_classifiers, scale_factor=1.25, s
             for x in range(0, gray_image.shape[1] - scaled_window_size[0], step_size):
                 window = gray_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                 resized_window = cv2.resize(window, window_size)
-                integral_window = integral_image(resized_window)
 
                 # Classifier evaluation
-                sum_alpha = 0
-                for classifier, alpha, threshold in classifiers:
-                    feature = eval_weak_classifier(extracted_classifiers[classifier], integral_window)
-                    sum_alpha += alpha * feature
+                score = boosted_predict(resized_window, classifiers, extracted_classifiers)
                 
                 # Face detection based on threshold
-                if sum_alpha >= threshold:
+                if score > 0:
                     # Check if the majority of the area in the bounding box is skin
                     face_region = skin_mask[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                     if cv2.countNonZero(face_region) > (0.5 * scaled_window_size[0] * scaled_window_size[1]):  # 50% skin threshold
