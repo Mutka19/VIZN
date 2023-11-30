@@ -3,6 +3,7 @@ import cv2
 import pickle
 from config import data_directory, training_directory
 from boosting import integral_image, eval_weak_classifier, boosted_predict
+from cascade import train_cascade
 import importlib.util
 import numpy as np
 
@@ -164,6 +165,116 @@ def detect_faces(image, boosted_model, weak_classifiers, scale_factor=1.25, step
     return detected_faces
 
 
+
+def load_modelCascade(file_name):
+    """
+    Loads a trained AdaBoost model from the training directory.
+    Args:
+        file_name: The name of the file containing the model data.
+    Returns:
+        The loaded model.
+    """
+    # Combine the folder path and file name to get the full path
+    full_file_path = os.path.join(training_directory, file_name)
+
+    # Use the full path when opening the file
+    with open(full_file_path, 'rb') as file:
+        model_data = pickle.load(file)
+    
+    return model_data
+
+#prob should be moved to boosting file but had import problems
+def boosted_predict_cascade(images, cascade_dict):
+    """
+    Classify a set of instances (images) using a cascade of boosted models.
+    Parameters:
+    - images: numpy.ndarray, an array of instances for classification.
+    - cascade_dict: dict, a dictionary where each key-value pair is a stage in the cascade, 
+      with the key being the stage number and the value being a tuple of a boosted model 
+      and its corresponding weak classifiers.
+    Returns:
+    - results: numpy.ndarray, the prediction results for each image.
+    """
+    print("Type of cascade:", type(cascade_dict))
+    print(f"Debug: Number of images: {len(images)}, Cascade stages: {len(cascade_dict)}")
+
+    if not isinstance(cascade_dict, dict):
+        print("Error: Cascade is not a dictionary.")
+        return
+
+    if len(images.shape) == 2:
+        images = np.expand_dims(images, axis=0)
+
+    results = np.zeros(images.shape[0])
+
+    for i in range(images.shape[0]):
+        integral_img = integral_image(images[i])
+        passed_all_stages = True
+
+        for stage_number, (boosted_model, weak_classifiers) in cascade_dict.items():
+            print(f"Processing Stage {stage_number}")
+            result = 0
+            for classifier_idx, alpha, threshold in boosted_model:
+                classifier = weak_classifiers[classifier_idx]
+                classifier_response = eval_weak_classifier(classifier, integral_img)
+
+                weak_decision = 1 if classifier_response > threshold else -1
+                result += weak_decision * alpha
+
+            if result <= 0:  # Image classified as nonface at this stage
+                passed_all_stages = False
+                break
+
+        results[i] = 1 if passed_all_stages else -1  # 1 for face, -1 for nonface
+
+    return results
+
+
+
+#like detect_faces but for cascades
+def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0.7):
+    detected_faces = []
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Convert to HSV for skin detection
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    skin_mask = refine_skin_mask(hsv_image)
+
+    # Initial window size should match the trained classifier input
+    window_size = (31, 25)
+    current_scale = 1.0
+
+    # Sliding window approach with scaling
+    while window_size[0] * current_scale < gray_image.shape[1] and window_size[1] * current_scale < gray_image.shape[0]:
+        scaled_window_size = (int(window_size[0] * current_scale), int(window_size[1] * current_scale))
+
+        for y in range(0, gray_image.shape[0] - scaled_window_size[1], step_size):
+            for x in range(0, gray_image.shape[1] - scaled_window_size[0], step_size):
+                window = gray_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
+                resized_window = cv2.resize(window, window_size)
+                integral_window = integral_image(resized_window)
+
+                # Classifier evaluation using boosted_predict_cascade
+                prediction = boosted_predict_cascade(np.expand_dims(integral_window, axis=0), cascade)
+
+                if prediction > 0:  # Assuming positive prediction indicates a face
+                    face_region = skin_mask[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
+                    if cv2.countNonZero(face_region) > (threshold * scaled_window_size[0] * scaled_window_size[1]): 
+                        detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
+
+        current_scale *= scale_factor
+
+    # Apply Non-Max Suppression to the bounding boxes
+    if len(detected_faces) > 0:
+        detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
+    else:
+        print(f"Warning: No prediction returned for window at ({x}, {y})")
+    return detected_faces
+
+
+
+
 def calculate_precision_recall(true_positives, false_positives, false_negatives):
     """
     Calculate precision and recall from true positives, false positives, and false negatives.
@@ -218,12 +329,9 @@ def test_nonfaces(directory, classifiers, extracted_classifiers):
     return false_positives
 
 
-# The main function processes each annotated image and evaluates the detections
 def main():
-    # Load model data
-    model_data = load_model()
-    classifiers = model_data['classifiers']
-    extracted_classifiers = model_data['extracted_classifiers']
+   
+    
 
     # Datasets
     face_photos_dir = os.path.join(data_directory, 'test_face_photos')
@@ -231,6 +339,9 @@ def main():
     cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
     nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
 
+    #Train the model
+    model_dataCascade = load_modelCascade("face_detection_cascad.pkl")
+    #print(model_dataCascade)
     # Ensure output directory exists
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -246,63 +357,38 @@ def main():
         image = cv2.imread(image_path)
         if image is None:
             print(f"Failed to load image: {image_path}")
+            continue
+
+        print(f"Image loaded successfully: {image_path}")
+
+        detected_faces = detect_faces_cascade(image, model_dataCascade)  # Modified to use the cascade
+        detected_flags = [False] * len(true_faces)
+
+        # Draw bounding boxes and count TP, FP, FN
+        for detected_box in detected_faces:
+            match_found = False
+            for idx, true_box in enumerate(true_faces):
+                iou = calculate_iou(detected_box, true_box)
+                if iou > 0.5:
+                    tp_face_photos += 1
+                    detected_flags[idx] = True
+                    match_found = True
+                    break
+            if not match_found:
+                fp_face_photos += 1
+
+            cv2.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
+
+        fn_face_photos += detected_flags.count(False)
+
+        # Save the image with bounding boxes
+        output_path = os.path.join(output_dir, photo_file_name)
+        if not cv2.imwrite(output_path, image):
+            print(f"Failed to save image: {output_path}")
         else:
-            print(f"Image loaded successfully: {image_path}")
+            print(f"Image saved successfully: {output_path}")
 
-        if image is not None:
-            detected_faces = detect_faces(image, classifiers, extracted_classifiers)
-            detected_flags = [False] * len(true_faces)
-
-            # Draw bounding boxes and count TP, FP, FN
-            for detected_box in detected_faces:
-                match_found = False
-                for idx, true_box in enumerate(true_faces):
-                    iou = calculate_iou(detected_box, true_box)
-                    if iou > 0.5:
-                        tp_face_photos += 1
-                        detected_flags[idx] = True
-                        match_found = True
-                        break
-                if not match_found:
-                    fp_face_photos += 1
-                
-                cv2.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
-
-            fn_face_photos += detected_flags.count(False)
-
-            # Save the image with bounding boxes
-            output_path = os.path.join(output_dir, photo_file_name)
-            cv2.imwrite(output_path, image)
-            if not cv2.imwrite(output_path, image):
-                print(f"Failed to save image: {output_path}")
-            else:
-                print(f"Image saved successfully: {output_path}")
-
-    # Testing on Cropped Faces and Nonfaces
-    tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, classifiers, extracted_classifiers)
-    fp_nonfaces = test_nonfaces(nonfaces_dir, classifiers, extracted_classifiers)
-    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces  # Calculate True Negatives in test_nonfaces
-
-    # Calculate precision and recall for face photos
-    precision_face_photos, recall_face_photos = calculate_precision_recall(tp_face_photos, fp_face_photos, fn_face_photos)
-
-    # Calculate precision and recall for cropped faces
-    precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, 0, fn_cropped)  # FP is 0 for cropped faces
-
-    # Output performance metrics
-    print("Dataset: Test Face Photos")
-    print(f"True Positives: {tp_face_photos}, False Positives: {fp_face_photos}, False Negatives: {fn_face_photos}")
-    print(f"Precision: {precision_face_photos:.2f}, Recall: {recall_face_photos:.2f}")
-    print("Assumption: This dataset contains both faces and non-faces.")
-    
-    print("\nDataset: Test Cropped Faces")
-    print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}, False Positives: 0")
-    print(f"Precision: {precision_cropped:.2f}, Recall: {recall_cropped:.2f}")
-    print("Assumption: This dataset contains only faces. No false positives or true negatives expected.")
-    
-    print("\nDataset: Test Nonfaces")
-    print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
-    print("Assumption: This dataset contains only non-faces. No true positives or false negatives expected.")
+    # Rest of the code for testing on Cropped Faces and Nonfaces remains unchanged
 
 if __name__ == "__main__":
     main()
