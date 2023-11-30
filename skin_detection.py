@@ -23,7 +23,7 @@ def detect_skin(image, kernel=np.ones((7,7))):
     hsv_image = cv.cvtColor(image, cv.COLOR_RGB2HSV)
 
     # Set upper and lower bounds for HSV skin detection
-    lower_skin = np.array([0, 48, 80], dtype=np.uint8)
+    lower_skin = np.array([0, 25, 10], dtype=np.uint8)
     upper_skin = np.array([20, 255, 255], dtype=np.uint8)
 
     # Create skin_mask for detection
