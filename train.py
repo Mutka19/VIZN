@@ -5,6 +5,7 @@ from boosting import integral_image
 from boosting import generate_classifier
 from boosting import eval_weak_classifier
 from boosting import adaboost
+from cascade import train_cascade
 from config import data_directory, training_directory
 import pickle
 
@@ -121,6 +122,6 @@ if __name__ == "__main__":
     faces = load_images_from_folder(faces_dir)
     nonfaces = load_images_from_folder(nonfaces_dir)
 
-    model = train_model(faces, nonfaces)
+    model = train_cascade(faces, nonfaces)
 
     save_model(model)
