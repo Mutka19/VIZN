@@ -4,80 +4,102 @@ import numpy as np
 def is_rgb(img):
     return len(img.shape) == 3 and img.shape[2] == 3
 
-def detect_skin(image, positive_histogram, negative_histogram):
+def gaussian_probability(mean, std, values):
     """
-    Detects skin in an image using positive and negative histograms.
+    Calculate Gaussian probability based on given mean and standard deviation for each value.
     
     Parameters:
-        image (numpy.ndarray): The input image array with shape (height, width, 3).
-        positive_histogram (numpy.ndarray): The positive histogram.
-        negative_histogram (numpy.ndarray): The negative histogram.
+        mean (float): The mean of the distribution.
+        std (float): The standard deviation of the distribution.
+        values (numpy.ndarray): The array of values for which to calculate the Gaussian probabilities.
         
     Returns:
-        numpy.ndarray: The output array with skin detection probabilities, shape (height, width).
+        numpy.ndarray: The array of Gaussian probabilities for the input values.
     """
-    # Make sure image is RGB and not grayscale
+    return np.exp(-((values - mean)**2) / (2 * std ** 2)) / (std * np.sqrt(2 * np.pi))
+
+def get_norm_stats():
+    data = np.loadtxt("skin_data/UCI_Skin_NonSkin.txt")
+    red = []
+    green = []
+    blue = []
+    for color in data:
+        if color[3] == 1:
+            red.append(color[2])
+            green.append(color[1])
+            blue.append(color[0])
+    
+    red=np.array(red).ravel()
+    green=np.array(green).ravel()
+    blue=np.array(blue).ravel()
+
+    total = red + green + blue
+    red2 = np.divide(red, total, where=total !=0)
+    green2 = np.divide(green, total, where=total != 0)
+
+    r_mean = np.mean(red2)
+    g_mean = np.mean(green2)
+    r_std = np.std(red2)
+    g_std = np.std(green2)
+
+    return r_mean, g_mean, r_std, g_std
+
+def skin_detect(image):
+    # Return image if it is grayscale
     if not is_rgb(image):
         return image
     
-    histogram_bins = positive_histogram.shape[0]
-    factor = 256 / histogram_bins
+    # Convert image to float64 to prevent overflow
+    image = image.astype(np.float64)
+    rows, cols, _ = image.shape
+
+    # Initialize skin detection array
+    skin_detection2 = np.zeros((rows, cols))
+
+    # Get mean and std for red and green
+    r_mean, g_mean, r_std, g_std = get_norm_stats()
+
+    # Apply probabilistic model using normalized color spaces
+    for row in range(rows):
+        for col in range(cols):
+            red = image[row, col, 0]
+            green = image[row, col, 1]
+            blue = image[row, col, 2]
+        
+            total = red + green + blue
+            if total > 0:
+                r = red / total
+                g = green / total
+            else:
+                r = 0
+                g = 0
+            
+            r_prob = gaussian_probability(r_mean, r_std, r)
+            g_prob = gaussian_probability(g_mean, g_std, g)
+        
+            prob = r_prob * g_prob
+            skin_detection2[row, col] = prob
+
+    # Get value of 80th percentile of probabilities to use as filter for skin mask
+    perc = np.percentile(skin_detection2, 80)
+
+    # Convert image back to uint8
+    image = image.astype(np.uint8)
+
+    # Apply filter to mask
+    mask = (skin_detection2 > (perc)).astype(np.uint8)
+
+    # Normalize mask
+    mask = cv.normalize(mask, None, alpha=0, beta=255, norm_type=cv.NORM_MINMAX, dtype=cv.CV_8U)
+
+    # Apply threshold to mask image to make it binary
+    _, mask_binary = cv.threshold(mask, 1, 255, cv.THRESH_BINARY)
+
+    # Apply morphological operations to further refine mask
+    kernel = np.ones((3,3), np.uint8)
+    mask_morph = cv.morphologyEx(mask_binary, cv.MORPH_CLOSE, kernel, iterations=4)
+    kernel = np.ones((3,3), np.uint8)
+    mask_morph = cv.erode(mask_morph, kernel, iterations=1)
     
-    # Calculate indices for each color channel
-    red_indices = (image[:, :, 0] / factor).astype(int)
-    green_indices = (image[:, :, 1] / factor).astype(int)
-    blue_indices = (image[:, :, 2] / factor).astype(int)
-    
-    # Fetch probabilities from histograms using the indices
-    skin_values = positive_histogram[red_indices, green_indices, blue_indices]
-    non_skin_values = negative_histogram[red_indices, green_indices, blue_indices]
-    
-    # Compute total probabilities
-    total = skin_values + non_skin_values
-    
-    # Calculate skin probabilities using Bayes rule: P(skin | RGB) = P(RGB | skin) * P(skin) / P(RGB)
-    #      skin_vales = P(RGB | skin)
-    # non_skin_values = P(RGB | non-skin)
-    #  total = P(RGB) = P(RGB | skin) * P(skin) + P(RGB | non-skin) * P(non-skin). For simplicity, we assume P(skin) = P(non-skin) = 0.5
-    #          result = P(skin | RGB)
-    result = np.divide(skin_values, total, out=np.zeros_like(skin_values), where=total!=0)
-    
-    return result
-
-import numpy as np
-
-
-def build_histograms():
-    """
-    Builds skin and non-skin color histograms from a given dataset file.
-
-    Args:
-    - data (numpy.ndarray): The dataset array with shape (N, 4). Each row represents a pixel, and the
-                            columns represent the B, G, R values and the label (1 for skin, 2 for non-skin).
-
-    Returns:
-    - skin_histogram (numpy.ndarray): A 3D numpy array representing the skin color histogram.
-    - nonskin_histogram (numpy.ndarray): A 3D numpy array representing the non-skin color histogram.
-    """
-    data = np.loadtxt("skin_data/UCI_Skin_NonSkin.txt")
-    # Convert data from BGR to RGB order
-    rgb_data = data[:, [2, 1, 0, 3]]
-
-    # Seperate skin data from nonskin data
-    # Adds only rgb values to appropriate dataset given label
-    skin_data = np.array([i[:-1] for i in rgb_data if i[-1] == 1])
-    nonskin_data = np.array([i[:-1] for i in rgb_data if i[-1] == 2])
-
-    # Create histograms
-    skin_histogram, _ = np.histogramdd(
-        skin_data, bins=[32, 32, 32], range=[(0, 256), (0, 256), (0, 256)]
-    )
-    nonskin_histogram, _ = np.histogramdd(
-        nonskin_data, bins=[32, 32, 32], range=[(0, 256), (0, 256), (0, 256)]
-    )
-
-    # Normalize histograms
-    skin_histogram = skin_histogram / np.sum(skin_histogram)
-    nonskin_histogram = nonskin_histogram / np.sum(nonskin_histogram)
-
-    return skin_histogram, nonskin_histogram
+    # Return image with mask applied to it
+    return cv.bitwise_and(image, image, mask=mask_morph)
