@@ -1,3 +1,6 @@
+import numpy as np
+import cv2 as cv
+
 def gaussian_probability(mean, std, values):
     """
     Calculate Gaussian probability based on given mean and standard deviation for each value.
