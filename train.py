@@ -141,7 +141,6 @@ if __name__ == "__main__":
     faces = load_faces_from_folder(faces_dir)
     nonfaces = load_nonfaces_from_folder(nonfaces_dir)
 
-    print((faces.shape), (nonfaces.shape))
     model = train_cascade(faces, nonfaces)
 
     save_model(model)
