@@ -5,14 +5,16 @@ from boosting import eval_weak_classifier
 from boosting import adaboost
 from boosting import boosted_predict
 
-def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_classifiers=15, classifier_increment=15):
+def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classifiers=15, classifier_increment=15):
     """
     Trains a cascade of AdaBoost models.
     """
     cascade = []
     face_integrals = np.array([integral_image(face) for face in faces])  # Compute once
 
-    for stage in range(stages):
+    stage = 0
+
+    while stage < stages - 1:
         print(f"Training stage {stage + 1}/{stages}")
         num_classifiers = initial_classifiers + stage * classifier_increment  # Increase classifiers in later stages
         weak_count = max_weak_count // stages
@@ -39,12 +41,17 @@ def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_class
         # Run AdaBoost for this stage
         boosted_classifier = adaboost(responses, labels, num_classifiers)
 
-        # Extract classifiers for this stage
-        cascade.append((boosted_classifier, weak_classifiers))
-
         if stage < stages - 1:
             # Update nonfaces with false positives for the next stage
-            nonfaces = get_false_positives(nonfaces, boosted_classifier, weak_classifiers)
+            false_positives = get_false_positives(nonfaces, boosted_classifier, weak_classifiers)
+            if len(false_positives) < len(nonfaces) / 2.5 or len(false_positives) > len(nonfaces) / 1.05:
+                print("Stage training failed to produce classifier! Retrying!")
+                continue
+            else:
+                # Extract classifiers for this stage
+                cascade.append((boosted_classifier, weak_classifiers))
+                nonfaces = false_positives
+                stage+=1
 
     return cascade
 
