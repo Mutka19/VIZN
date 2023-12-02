@@ -5,7 +5,7 @@ from boosting import eval_weak_classifier
 from boosting import adaboost
 from boosting import boosted_predict
 
-def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classifiers=15, classifier_increment=15):
+def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_classifiers=15, classifier_increment=15):
     """
     Trains a cascade of AdaBoost models.
     """
@@ -19,8 +19,10 @@ def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classi
         weak_classifiers = [generate_classifier(faces.shape[1], faces.shape[0]) for _ in range(weak_count)]
 
         nonface_integrals = np.array([integral_image(nonface) for nonface in nonfaces])  # Compute for current nonfaces
+
         if len(nonface_integrals) == 0:
             break
+
         print("Shape of face_integrals:", face_integrals.shape)
         print("Shape of nonface_integrals:", nonface_integrals.shape)
 
