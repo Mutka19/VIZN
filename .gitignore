@@ -6,3 +6,6 @@ __pycache__
 
 # Prevent zip files with redundant data from being pushed to repo
 data/*.zip
+
+# Prevent .DS_Store data from being pushed to database
+.DS_Store

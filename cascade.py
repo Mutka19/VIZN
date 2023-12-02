@@ -1,15 +1,11 @@
-import os
 import numpy as np
-import cv2 as cv
 from boosting import integral_image
 from boosting import generate_classifier
 from boosting import eval_weak_classifier
 from boosting import adaboost
 from boosting import boosted_predict
-from config import data_directory, training_directory
-import pickle
 
-def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classifiers=10, classifier_increment=10):
+def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classifiers=15, classifier_increment=15):
     """
     Trains a cascade of AdaBoost models.
     """
@@ -50,6 +46,7 @@ def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classi
 
     return cascade
 
+
 def get_false_positives(nonfaces, boosted_classifier, weak_classifiers):
     false_positives = []
     score = boosted_predict(nonfaces, boosted_classifier, weak_classifiers)
@@ -58,5 +55,3 @@ def get_false_positives(nonfaces, boosted_classifier, weak_classifiers):
             false_positives.append(nonfaces[i])
         
     return np.array(false_positives)
-
-

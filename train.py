@@ -5,23 +5,44 @@ from boosting import integral_image
 from boosting import generate_classifier
 from boosting import eval_weak_classifier
 from boosting import adaboost
+from cascade import train_cascade
 from config import data_directory, training_directory
 import pickle
 
-def load_and_process_image(file_path, size=(50, 50)):
+def load_and_process_faces(file_path, size=(50, 50)):
     """Load an image, convert it to grayscale, and resize."""
     img = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
     img_resized = cv.resize(img, size)
     return img_resized[14:45, 12:37]
 
 
-def load_images_from_folder(folder_path, size=(50, 50)):
+def load_faces_from_folder(folder_path):
+    """Load all images from the specified folder."""
+    size=(50, 50)
+    images = []
+    for file_name in os.listdir(folder_path):
+        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
+            file_path = os.path.join(folder_path, file_name)
+            images.append(load_and_process_faces(file_path, size))
+    return np.array(images)
+
+def load_and_process_nonfaces(file_path):
+    """Load an image, convert it to grayscale, and extract subwindows."""
+    img = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
+    rows, cols = img.shape[:2]
+    subwindows = []
+    for y in range(0, rows - 31, 124):
+        for x in range(0, cols - 25, 100):
+            subwindows.append(img[y:y+31, x:x+25])
+    return np.array(subwindows)
+
+def load_nonfaces_from_folder(folder_path):
     """Load all images from the specified folder."""
     images = []
     for file_name in os.listdir(folder_path):
         if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
             file_path = os.path.join(folder_path, file_name)
-            images.append(load_and_process_image(file_path, size))
+            images.extend(load_and_process_nonfaces(file_path))
     return np.array(images)
 
 
@@ -32,8 +53,7 @@ def save_model(model):
         model: Trained adaboost model containing classifier data and their shapes
     """
     model_data = {
-        'classifiers': model[0],
-        'extracted_classifiers': model[1],
+        'model': model
     }
 
     # Specify the file name
@@ -118,9 +138,10 @@ if __name__ == "__main__":
     faces_dir = os.path.join(data_directory, "training_faces")
     nonfaces_dir = os.path.join(data_directory, "training_nonfaces")
 
-    faces = load_images_from_folder(faces_dir)
-    nonfaces = load_images_from_folder(nonfaces_dir)
+    faces = load_faces_from_folder(faces_dir)
+    nonfaces = load_nonfaces_from_folder(nonfaces_dir)
 
-    model = train_model(faces, nonfaces)
+    print((faces.shape), (nonfaces.shape))
+    model = train_cascade(faces, nonfaces)
 
     save_model(model)
