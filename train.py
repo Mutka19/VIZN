@@ -26,13 +26,13 @@ def load_faces_from_folder(folder_path):
             images.append(load_and_process_faces(file_path, size))
     return np.array(images)
 
-def load_and_process_nonfaces(file_path):
+def load_and_process_nonfaces(file_path, scale=4):
     """Load an image, convert it to grayscale, and extract subwindows."""
     img = cv.imread(file_path, cv.IMREAD_GRAYSCALE)
     rows, cols = img.shape[:2]
     subwindows = []
-    for y in range(0, rows - 31, 124):
-        for x in range(0, cols - 25, 100):
+    for y in range(0, rows - 31, (31 * scale)):
+        for x in range(0, cols - 25, (25 * scale)):
             subwindows.append(img[y:y+31, x:x+25])
     return np.array(subwindows)
 
