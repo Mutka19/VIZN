@@ -5,7 +5,7 @@ from boosting import eval_weak_classifier
 from boosting import adaboost
 from boosting import boosted_predict
 
-def train_cascade(faces, nonfaces, max_weak_count=1000, stages=5, initial_classifiers=15, classifier_increment=15):
+def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_classifiers=5, classifier_increment=5):
     """
     Trains a cascade of AdaBoost models.
     """
