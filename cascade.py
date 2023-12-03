@@ -5,7 +5,7 @@ from boosting import eval_weak_classifier
 from boosting import adaboost
 from boosting import boosted_predict
 
-def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_classifiers=5, classifier_increment=5):
+def train_cascade(faces, nonfaces, max_weak_count=1000, stages=12, initial_classifiers=5, classifier_increment=2):
     """
     Trains a cascade of AdaBoost models.
     """
@@ -47,7 +47,7 @@ def train_cascade(faces, nonfaces, max_weak_count=1000, stages=10, initial_class
             if len(false_positives) < len(nonfaces) / 2.5 or len(false_positives) > len(nonfaces) / 1.05:
                 print("Stage training failed to produce classifier! Retrying!")
                 continue
-            else:
+            elif len(false_positives) < len(nonfaces) / 1.05 and (len(false_positives) > len(nonfaces) / 2 or len(nonfaces) < 300):
                 # Extract classifiers for this stage
                 cascade.append((boosted_classifier, weak_classifiers))
                 nonfaces = false_positives
