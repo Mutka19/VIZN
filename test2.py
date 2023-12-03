@@ -234,10 +234,10 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         # Parameters for NMS
 
         print("detected_faces before return:", detected_faces)
-        overlapThresh = 0.000000000001
-        sigma = 0.2
-        min_score = 0.9
-        method = "gaussian soft-NMS"
+        # overlapThresh = 0.000001
+        # sigma = 0.5
+        # min_score = 0.93
+        # method = "gaussian soft-NMS"
 
         # Apply NMS
         num_predictions = len(detected_scores)
@@ -262,8 +262,10 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         normalized_boxesyay = np.array(normalize_boxes(detected_faces, w, h))
         result_boxes, result_scores, result_labels = prepare_boxes(normalized_boxesyay, detected_scores, predicted_labels)
         
-        keep_indices  = nms_float_fast(result_boxes, detected_scores, overlapThresh)
-
+        #keep_indices  = cpu_soft_nms_float(result_boxes, detected_scores, overlapThresh)
+        keep_indices = cpu_soft_nms_float(result_boxes, detected_scores, Nt=0.012, sigma=0.08, thresh=0.15, method=3)
+        print("keep_indices:", keep_indices)  # Add this line to debug
+        keep_indices = np.array(keep_indices).astype(int)  # Convert to an integer array
         filtered_boxes = result_boxes[keep_indices]
         # Denormalize boxes for drawing
         final_boxes = []
