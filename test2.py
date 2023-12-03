@@ -164,18 +164,16 @@ def boosted_predict_cascade(image, cascade):
     - results: numpy.ndarray, the prediction results for each image.
     """
 
-    passed_all_stages = True
 
     for i, stage in enumerate(cascade):
         boosted_classifier, weak_classifiers = stage
         # print(f"Processing Stage {stage_number}")
         score = boosted_predict(image, boosted_classifier, weak_classifiers)
         
-        if score < 0:
-            passed_all_stages = False
+        if score <= .03:
             break
 
-    return passed_all_stages
+    return score
 
 
 #like detect_faces but for cascades
@@ -185,7 +183,8 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
     # Get and apply skin mask
-    skin_image = skin_detect(rgb_image)
+    mask = skin_detect(rgb_image)
+    skin_image = cv.bitwise_and(rgb_image, rgb_image, mask=mask)
     gray_image = cv.cvtColor(skin_image, cv.COLOR_RGB2GRAY)
 
     # _, axes = plt.subplots(1, 2, figsize=(10, 5))
@@ -196,7 +195,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     # axes[1].axis('off')
     # axes[1].set_title("Skin Detection Result")
     # plt.tight_layout()
-    # plt.show(block=False)
+    # plt.show(block=True)
 
     # Initial window size should match the trained classifier input
     window_size = (25, 31)
@@ -214,7 +213,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
                 # Classifier evaluation using boosted_predict_cascade
                 prediction = boosted_predict_cascade(resized_window, cascade)
 
-                if prediction:  # Assuming positive prediction indicates a face
+                if prediction > .03:  # Assuming positive prediction indicates a face
                     # face_region = skin_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                     # if cv.countNonZero(face_region) > (threshold * scaled_window_size[0] * scaled_window_size[1]): 
                     detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
