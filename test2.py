@@ -179,6 +179,7 @@ def boosted_predict_cascade(image, cascade):
 #like detect_faces but for cascades
 def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0.7):
     detected_faces = []
+    detected_scores = []
     # Convert to RGB for skin detection
     rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
 
@@ -217,6 +218,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
                     # face_region = skin_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                     # if cv.countNonZero(face_region) > (threshold * scaled_window_size[0] * scaled_window_size[1]): 
                     detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
+                    detected_scores.append(prediction)
 
         current_scale *= scale_factor
 
