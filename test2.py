@@ -152,7 +152,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 #prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade):
+def boosted_predict_cascade(image, cascade, threshold):
     """
     Classify a set of instances (images) using a cascade of boosted models.
     Parameters:
@@ -170,14 +170,14 @@ def boosted_predict_cascade(image, cascade):
         # print(f"Processing Stage {stage_number}")
         score = boosted_predict(image, boosted_classifier, weak_classifiers)
         
-        if score <= .03:
+        if score <= threshold:
             break
 
     return score
 
 
 #like detect_faces but for cascades
-def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0.7):
+def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0):
     detected_faces = []
     detected_scores = []
     # Convert to RGB for skin detection
@@ -212,9 +212,9 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
                 resized_window = cv.resize(window, window_size)
 
                 # Classifier evaluation using boosted_predict_cascade
-                prediction = boosted_predict_cascade(resized_window, cascade)
+                prediction = boosted_predict_cascade(resized_window, cascade, threshold)
 
-                if prediction > .03:  # Assuming positive prediction indicates a face
+                if prediction > threshold:  # Assuming positive prediction indicates a face
                     # face_region = skin_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                     # if cv.countNonZero(face_region) > (threshold * scaled_window_size[0] * scaled_window_size[1]): 
                     detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
