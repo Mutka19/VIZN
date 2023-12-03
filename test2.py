@@ -171,7 +171,7 @@ def boosted_predict_cascade(image, cascade):
         # print(f"Processing Stage {stage_number}")
         score = boosted_predict(image, boosted_classifier, weak_classifiers)
         
-        if score <= .03:
+        if score <= 0.0003:
             break
 
     return score
@@ -234,10 +234,10 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         # Parameters for NMS
 
         print("detected_faces before return:", detected_faces)
-        overlapThresh = 0.3
-        sigma = 0.5
-        min_score = 0.8
-        method = "standard NMS"
+        overlapThresh = 0.000000000001
+        sigma = 0.2
+        min_score = 0.9
+        method = "gaussian soft-NMS"
 
         # Apply NMS
         num_predictions = len(detected_scores)
