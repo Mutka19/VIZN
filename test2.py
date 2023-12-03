@@ -8,6 +8,7 @@ from train import load_faces_from_folder
 import matplotlib.pyplot as plt
 import importlib.util
 import numpy as np
+from nms import prepare_boxes, cpu_soft_nms_float,nms_float_fast, nms, normalize_boxes
 
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
@@ -176,6 +177,8 @@ def boosted_predict_cascade(image, cascade):
     return score
 
 
+
+
 #like detect_faces but for cascades
 def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0.7):
     detected_faces = []
@@ -217,17 +220,53 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
                 if prediction > .03:  # Assuming positive prediction indicates a face
                     # face_region = skin_image[y:y + scaled_window_size[1], x:x + scaled_window_size[0]]
                     # if cv.countNonZero(face_region) > (threshold * scaled_window_size[0] * scaled_window_size[1]): 
-                    detected_faces.append((x, y, x + scaled_window_size[0], y + scaled_window_size[1]))
+                    detected_box = [x, y, x + scaled_window_size[0], y + scaled_window_size[1]]
+                    #print("Appending detected box:", detected_box)
+                    detected_faces.append(detected_box)
                     detected_scores.append(prediction)
 
         current_scale *= scale_factor
 
+    #print("detected_faces:", detected_faces)  # Debug output to see the entire list
     # Apply Non-Max Suppression to the bounding boxes
     if len(detected_faces) > 0:
-        detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
-    # else:
-    #     print(f"Warning: No prediction returned for window at ()")
-    return detected_faces
+        #detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
+        # Parameters for NMS
+
+        print("detected_faces before return:", detected_faces)
+        overlapThresh = 0.3
+        sigma = 0.5
+        min_score = 0.8
+        method = "standard NMS"
+
+        # Apply NMS
+        num_predictions = len(detected_scores)
+        # Generate labels as a range from 1 to the number of predictions
+        predicted_labels = np.arange(1, num_predictions + 1)
+        
+        #print(len(detected_scores), type(detected_scores))
+        #print(detected_scores[0])
+
+        detected_scores = [item for sublist in detected_scores for item in sublist]
+        detected_scores = np.array(detected_scores)
+        detected_faces = np.array(detected_faces)
+        #print(detected_scores)
+        print(len(detected_scores), type(detected_scores))
+        
+        #print(detected_scores)
+        print("before NMS", len(detected_faces))
+        print("Len of labels", len(predicted_labels))
+        h, w, c = image.shape
+
+      
+        normalized_boxesyay = np.array(normalize_boxes(detected_faces, w, h))
+        result_boxes, result_scores, result_labels = prepare_boxes(normalized_boxesyay, detected_scores, predicted_labels)
+        
+        filtered_boxes = nms_float_fast(result_boxes, detected_scores, overlapThresh)
+        #print("after NMS", len(filtered_boxes))
+    return filtered_boxes
+
+
 
 
 def calculate_precision_recall(true_positives, false_positives, false_negatives):
@@ -246,7 +285,7 @@ if __name__ == "__main__":
     cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
     nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
 
-    #Train the model
+    # Load the model
     model_dataCascade = load_model()
     model = model_dataCascade['model']
     
@@ -271,22 +310,26 @@ if __name__ == "__main__":
         print(f"Image loaded successfully: {image_path}")
 
         detected_faces = detect_faces_cascade(image, model)  # Modified to use the cascade
+        #print("All detected faces:", detected_faces)  # Debug output to see the entire list
+
         detected_flags = [False] * len(true_faces)
 
-        # Draw bounding boxes and count TP, FP, FN
         for detected_box in detected_faces:
-            match_found = False
-            for idx, true_box in enumerate(true_faces):
-                iou = calculate_iou(detected_box, true_box)
-                if iou > 0.5:
-                    tp_face_photos += 1
-                    detected_flags[idx] = True
-                    match_found = True
-                    break
-            if not match_found:
-                fp_face_photos += 1
+            if isinstance(detected_box, (list, np.ndarray)) and len(detected_box) == 4:
+                match_found = False
+                for idx, true_box in enumerate(true_faces):
+                    iou = calculate_iou(detected_box, true_box)
+                    if iou > 0.5:
+                        tp_face_photos += 1
+                        detected_flags[idx] = True
+                        match_found = True
+                        break
+                if not match_found:
+                    fp_face_photos += 1
 
-            cv.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
+                cv.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
+            else:
+                print("Error: Detected box is not in the expected format:", detected_box)
 
         fn_face_photos += detected_flags.count(False)
 
@@ -297,27 +340,26 @@ if __name__ == "__main__":
         else:
             print(f"Image saved successfully: {output_path}")
 
-    tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, model)
-    fp_nonfaces = test_nonfaces(nonfaces_dir, model)
-    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces  # Calculate True Negatives in test_nonfaces
-
     # Calculate precision and recall for face photos
     precision_face_photos, recall_face_photos = calculate_precision_recall(tp_face_photos, fp_face_photos, fn_face_photos)
 
     # Calculate precision and recall for cropped faces
+    tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, model)
     precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, 0, fn_cropped)  # FP is 0 for cropped faces
 
+    # Calculate precision and recall for nonfaces
+    fp_nonfaces = test_nonfaces(nonfaces_dir, model)
+    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces  # True Negatives in test_nonfaces
+
     # Output performance metrics
-    print("Dataset: Test Face Photos")
+    print("\nDataset: Test Face Photos")
     print(f"True Positives: {tp_face_photos}, False Positives: {fp_face_photos}, False Negatives: {fn_face_photos}")
     print(f"Precision: {precision_face_photos:.2f}, Recall: {recall_face_photos:.2f}")
-    print("Assumption: This dataset contains both faces and non-faces.")
-    
+
     print("\nDataset: Test Cropped Faces")
-    print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}, False Positives: 0")
+    print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}")
     print(f"Precision: {precision_cropped:.2f}, Recall: {recall_cropped:.2f}")
-    print("Assumption: This dataset contains only faces. No false positives or true negatives expected.")
-    
+
     print("\nDataset: Test Nonfaces")
     print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
-    print("Assumption: This dataset contains only non-faces. No true positives or false negatives expected.")
+    print("Precision and recall are not applicable for the nonfaces dataset.")
