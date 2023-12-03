@@ -8,7 +8,7 @@ from train import load_faces_from_folder
 import matplotlib.pyplot as plt
 import importlib.util
 import numpy as np
-from nms import prepare_boxes, cpu_soft_nms_float,nms_float_fast, nms, normalize_boxes
+from nms import prepare_boxes, cpu_soft_nms_float, nms_float_fast, nms, normalize_boxes
 
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
@@ -55,7 +55,7 @@ def test_cropped_faces(directory, cascade):
 
     for image in cropped_images:
         detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        if detected_faces is not None and len(detected_faces) > 0:
             true_positives += 1
         else:
             false_negatives += 1
@@ -68,7 +68,7 @@ def test_nonfaces(directory, cascade):
 
     for image in nonface_images:
         detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        if detected_faces is not None and len(detected_faces) > 0:
             false_positives += 1
 
     return false_positives
@@ -92,6 +92,29 @@ def calculate_iou(boxA, boxB):
     # Compute IoU
     iou = intersection_area / float(boxA_area + boxB_area - intersection_area)
     return iou
+
+
+#prob should be moved to boosting file but had import problems
+def boosted_predict_cascade(image, cascade, threshold):
+    """
+    Classify a set of instances (images) using a cascade of boosted models.
+    Parameters:
+    - images: numpy.ndarray, an array of instances for classification.
+    - cascade_dict: dict, a dictionary where each key-value pair is a stage in the cascade, 
+      with the key being the stage number and the value being a tuple of a boosted model 
+      and its corresponding weak classifiers.
+    Returns:
+    - results: numpy.ndarray, the prediction results for each image.
+    """
+
+    for stage in cascade:
+        boosted_classifier, weak_classifiers = stage
+        score = boosted_predict(image, boosted_classifier, weak_classifiers)
+        
+        if score <= threshold:
+            break
+
+    return score
 
 
 def non_max_suppression_fast(boxes, overlapThresh):
@@ -152,35 +175,8 @@ def non_max_suppression_fast(boxes, overlapThresh):
     return boxes[pick].astype("int")
 
 
-#prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade, threshold):
-    """
-    Classify a set of instances (images) using a cascade of boosted models.
-    Parameters:
-    - images: numpy.ndarray, an array of instances for classification.
-    - cascade_dict: dict, a dictionary where each key-value pair is a stage in the cascade, 
-      with the key being the stage number and the value being a tuple of a boosted model 
-      and its corresponding weak classifiers.
-    Returns:
-    - results: numpy.ndarray, the prediction results for each image.
-    """
-
-
-    for i, stage in enumerate(cascade):
-        boosted_classifier, weak_classifiers = stage
-        # print(f"Processing Stage {stage_number}")
-        score = boosted_predict(image, boosted_classifier, weak_classifiers)
-        
-        if score <= threshold:
-            break
-
-    return score
-
-
-
-
 #like detect_faces but for cascades
-def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0):
+def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlapThresh=0.3, threshold=0.1):
     detected_faces = []
     detected_scores = []
     # Convert to RGB for skin detection
@@ -233,7 +229,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         #detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
         # Parameters for NMS
 
-        print("detected_faces before return:", detected_faces)
+        # print("detected_faces before return:", detected_faces)
         overlapThresh = 0.000000000001
         sigma = 0.2
         min_score = 0.9
@@ -251,11 +247,11 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         detected_scores = np.array(detected_scores)
         detected_faces = np.array(detected_faces)
         #print(detected_scores)
-        print(len(detected_scores), type(detected_scores))
+        # print(len(detected_scores), type(detected_scores))
         
         #print(detected_scores)
-        print("before NMS", len(detected_faces))
-        print("Len of labels", len(predicted_labels))
+        # print("before NMS", len(detected_faces))
+        # print("Len of labels", len(predicted_labels))
         h, w, c = image.shape
 
       
@@ -315,27 +311,28 @@ if __name__ == "__main__":
             continue
 
         detected_faces = detect_faces_cascade(image, model)
-        print("after all is said and done we have ", len(detected_faces), " bounding boxes")
-        print("first bounding box ", detected_faces[0])
-        filtered_detected_faces = [box for box in detected_faces if isinstance(box, (list, np.ndarray)) and len(box) == 4]
+        if detected_faces is not None:
+            print("after all is said and done we have ", len(detected_faces), " bounding boxes")
+            print("first bounding box ", detected_faces[0])
+            filtered_detected_faces = [box for box in detected_faces if isinstance(box, (list, np.ndarray)) and len(box) == 4]
 
-        detected_flags = [False] * len(true_faces)
+            detected_flags = [False] * len(true_faces)
 
-        for detected_box in filtered_detected_faces:
-            match_found = False
-            for idx, true_box in enumerate(true_faces):
-                iou = calculate_iou(detected_box, true_box)
-                if iou > 0.5:
-                    tp_face_photos += 1
-                    detected_flags[idx] = True
-                    match_found = True
-                    break
-            if not match_found:
-                fp_face_photos += 1
+            for detected_box in filtered_detected_faces:
+                match_found = False
+                for idx, true_box in enumerate(true_faces):
+                    iou = calculate_iou(detected_box, true_box)
+                    if iou > 0.5:
+                        tp_face_photos += 1
+                        detected_flags[idx] = True
+                        match_found = True
+                        break
+                if not match_found:
+                    fp_face_photos += 1
 
-            cv.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
+                cv.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
 
-        fn_face_photos += detected_flags.count(False)
+            fn_face_photos += detected_flags.count(False)
 
         output_path = os.path.join(output_dir, photo_file_name)
         cv.imwrite(output_path, image)
