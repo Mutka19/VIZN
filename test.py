@@ -1,12 +1,10 @@
 import os
 import cv2 as cv
 from config import data_directory
-from model import load_model
-from testing import detect_faces_cascade, calculate_iou, calculate_precision_recall, test_cropped_faces, test_nonfaces
+from src.model import load_model
+from src.testing import detect_faces_cascade, calculate_iou, calculate_precision_recall, test_cropped_faces, test_nonfaces
 from src.processing import load_test_images
-import matplotlib.pyplot as plt
 import importlib.util
-import numpy as np
 
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
