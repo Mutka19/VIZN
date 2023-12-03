@@ -1,5 +1,3 @@
-
-
 import numpy as np
 
 def prepare_boxes(boxes, scores, labels):
@@ -272,45 +270,44 @@ def soft_nms(boxes, scores, labels, method=2, iou_thr=0.5, sigma=0.5, thresh=0.0
     return nms_method(boxes, scores, labels, method=method, iou_thr=iou_thr, sigma=sigma, thresh=thresh, weights=weights)
 
 
-import numpy as np
+if __name__ == "__main__":
+    # Define your input data (example data)
+    boxes = np.array([[0.1, 0.2, 0.8, 0.7], [0.0, 0.0, -0.2, 0.6], [0.9, 1.1, 1.2, 1.3]])
+    scores = np.array([0.9, 0.8, 0.7])
+    labels = np.array([1, 2, 3])
 
-# Define your input data (example data)
-boxes = np.array([[0.1, 0.2, 0.8, 0.7], [0.0, 0.0, -0.2, 0.6], [0.9, 1.1, 1.2, 1.3]])
-scores = np.array([0.9, 0.8, 0.7])
-labels = np.array([1, 2, 3])
+    # Call the prepare_boxes function
+    result_boxes, result_scores, result_labels = prepare_boxes(boxes, scores, labels)
 
-# Call the prepare_boxes function
-result_boxes, result_scores, result_labels = prepare_boxes(boxes, scores, labels)
+    # Print the results
+    print("Original Boxes:")
+    print(boxes)
+    print("Original Scores:")
+    print(scores)
+    print("Original Labels:")
+    print(labels)
 
-# Print the results
-print("Original Boxes:")
-print(boxes)
-print("Original Scores:")
-print(scores)
-print("Original Labels:")
-print(labels)
-
-print("\nProcessed Boxes:")
-print(result_boxes)
-print("Processed Scores:")
-print(result_scores)
-print("Processed Labels:")
-print(result_labels)
-
+    print("\nProcessed Boxes:")
+    print(result_boxes)
+    print("Processed Scores:")
+    print(result_scores)
+    print("Processed Labels:")
+    print(result_labels)
 
 
-# Prepare example bounding boxes and scores
-boxes = np.array([[100, 100, 200, 200], [150, 150, 250, 250], [300, 300, 400, 400]])
-scores = np.array([0.9, 0.85, 0.92])
 
-# Parameters for NMS
-overlapThresh = 0.3
-sigma = 0.5
-min_score = 0.8
-method = "standard NMS"
+    # Prepare example bounding boxes and scores
+    boxes = np.array([[100, 100, 200, 200], [150, 150, 250, 250], [300, 300, 400, 400]])
+    scores = np.array([0.9, 0.85, 0.92])
 
-# Apply NMS
-filtered_boxes = cpu_soft_nms_float(boxes, scores, overlapThresh, sigma, min_score, method)
+    # Parameters for NMS
+    overlapThresh = 0.3
+    sigma = 0.5
+    min_score = 0.8
+    method = "standard NMS"
 
-# filtered_boxes now contains the filtered bounding boxes
-print(filtered_boxes)
+    # Apply NMS
+    filtered_boxes = cpu_soft_nms_float(boxes, scores, overlapThresh, sigma, min_score, method)
+
+    # filtered_boxes now contains the filtered bounding boxes
+    print(filtered_boxes)
