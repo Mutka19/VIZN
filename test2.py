@@ -33,6 +33,27 @@ def load_model(model_name='face_detection_model.pkl'):
     return model_data
 
 
+
+
+def visualize_detections(image_path, detected_faces, output_dir):
+    image = cv.imread(image_path)
+    if image is None:
+        print(f"Failed to load image: {image_path}")
+        return
+
+    if detected_faces:
+        for detected_box in detected_faces:
+            cv.rectangle(image, (detected_box[0], detected_box[1]), (detected_box[2], detected_box[3]), (0, 255, 0), 2)
+
+    output_path = os.path.join(output_dir, os.path.basename(image_path))
+    cv.imwrite(output_path, image)
+
+
+
+
+
+
+
 def load_test_images(directory):
     """
     Loads all images from the specified directory without resizing.
@@ -289,6 +310,8 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
              print("No faces detected in -----test_cropped_faces") 
         if dataset == 3:
             print("No faces detected in -----test_nonfaces_photos")   
+        
+        return []  # Return an empty list instead of None
 
 
 def calculate_precision_recall(true_positives, false_positives, false_negatives):
@@ -364,9 +387,21 @@ if __name__ == "__main__":
     tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, model)
     precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, 0, fn_cropped)
 
+    visualizations_dir = os.path.join(output_dir, 'visualizations')
+    # Visualize Test Cropped Faces Dataset
+    for file_name, _ in load_test_images(cropped_faces_dir):
+        image_path = os.path.join(cropped_faces_dir, file_name)
+        detected_faces = detect_faces_cascade(cv.imread(image_path), model)
+        visualize_detections(image_path, detected_faces, visualizations_dir)
+
     # Precision and recall for nonfaces
     fp_nonfaces = test_nonfaces(nonfaces_dir, model)
     tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces
+
+    for file_name, _ in load_test_images(nonfaces_dir):
+        image_path = os.path.join(nonfaces_dir, file_name)
+        detected_faces = detect_faces_cascade(cv.imread(image_path), model)
+        visualize_detections(image_path, detected_faces, visualizations_dir)
 
     # Output performance metrics
     print("\nDataset: Test Face Photos")
