@@ -10,6 +10,10 @@ import importlib.util
 import numpy as np
 from nms import prepare_boxes, cpu_soft_nms_float,nms_float_fast, nms, normalize_boxes
 
+
+dataset=1
+
+
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
     spec = importlib.util.spec_from_file_location("face_annotations", annotations_path)
@@ -54,8 +58,10 @@ def test_cropped_faces(directory, cascade):
     false_negatives = 0
 
     for image in cropped_images:
+        dataset = 2
+        #print("CROPPED IMAGE, ", directory)
         detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        if detected_faces and len(detected_faces) > 0:
             true_positives += 1
         else:
             false_negatives += 1
@@ -67,8 +73,9 @@ def test_nonfaces(directory, cascade):
     false_positives = 0
 
     for image in nonface_images:
+        dataset = 3
         detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        if detected_faces and len(detected_faces) > 0:
             false_positives += 1
 
     return false_positives
@@ -184,12 +191,15 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     detected_faces = []
     detected_scores = []
     # Convert to RGB for skin detection
-    rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-
+    
     # Get and apply skin mask
-    mask = skin_detect(rgb_image)
-    skin_image = cv.bitwise_and(rgb_image, rgb_image, mask=mask)
-    gray_image = cv.cvtColor(skin_image, cv.COLOR_RGB2GRAY)
+    if dataset == 1 or dataset == 3:
+        rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
+        mask = skin_detect(rgb_image)
+        skin_image = cv.bitwise_and(rgb_image, rgb_image, mask=mask)
+        gray_image = cv.cvtColor(skin_image, cv.COLOR_RGB2GRAY)
+    else:
+        gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
     # _, axes = plt.subplots(1, 2, figsize=(10, 5))
     # axes[0].imshow(rgb_image)
@@ -229,11 +239,11 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
 
     #print("detected_faces:", detected_faces)  # Debug output to see the entire list
     # Apply Non-Max Suppression to the bounding boxes
-    if len(detected_faces) > 0:
+    if detected_faces and len(detected_faces) > 0:
         #detected_faces = non_max_suppression_fast(np.array(detected_faces), overlapThresh)
         # Parameters for NMS
 
-        print("detected_faces before return:", detected_faces)
+        #print("detected_faces before return:", detected_faces)
         # overlapThresh = 0.000001
         # sigma = 0.5
         # min_score = 0.93
@@ -254,8 +264,8 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         print(len(detected_scores), type(detected_scores))
         
         #print(detected_scores)
-        print("before NMS", len(detected_faces))
-        print("Len of labels", len(predicted_labels))
+        #print("before NMS", len(detected_faces))
+        #print("Len of labels", len(predicted_labels))
         h, w, c = image.shape
 
       
@@ -264,7 +274,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
         
         #keep_indices  = cpu_soft_nms_float(result_boxes, detected_scores, overlapThresh)
         keep_indices = cpu_soft_nms_float(result_boxes, detected_scores, Nt=0.012, sigma=0.08, thresh=0.15, method=3)
-        print("keep_indices:", keep_indices)  # Add this line to debug
+        #print("keep_indices:", keep_indices)  # Add this line to debug
         keep_indices = np.array(keep_indices).astype(int)  # Convert to an integer array
         filtered_boxes = result_boxes[keep_indices]
         # Denormalize boxes for drawing
@@ -274,7 +284,11 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
             final_boxes.append([int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h)])
 
         return final_boxes
-
+    else: 
+        if dataset == 2:
+             print("No faces detected in -----test_cropped_faces") 
+        if dataset == 3:
+            print("No faces detected in -----test_nonfaces_photos")   
 
 
 def calculate_precision_recall(true_positives, false_positives, false_negatives):
@@ -316,9 +330,10 @@ if __name__ == "__main__":
             print(f"Failed to load image: {image_path}")
             continue
 
+        dataset = 1
         detected_faces = detect_faces_cascade(image, model)
-        print("after all is said and done we have ", len(detected_faces), " bounding boxes")
-        print("first bounding box ", detected_faces[0])
+        #print("after all is said and done we have ", len(detected_faces), " bounding boxes")
+        #print("first bounding box ", detected_faces[0])
         filtered_detected_faces = [box for box in detected_faces if isinstance(box, (list, np.ndarray)) and len(box) == 4]
 
         detected_flags = [False] * len(true_faces)
