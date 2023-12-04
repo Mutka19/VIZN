@@ -138,7 +138,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 #prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade, threshold):
+def boosted_predict_cascade(image, cascade, threshold=0):
     """
     Classify a set of instances (images) using a cascade of boosted models.
     Parameters:
