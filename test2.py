@@ -104,13 +104,26 @@ def test_cropped_faces(directory, cascade):
     return true_positives, false_negatives
 
 def test_nonfaces(directory, cascade):
+    """
+    Predicts labels for test_nonfaces dataset
+    Parameters:
+    - directory: directory containing nonface images.
+    - cascade: a list of cascade stages containing the boosted 
+      classifiers and the associated weak classifiers
+    Returns:
+    - false_positives: number of false positives.
+    """
+    
+    # Loads test images from folders
     nonface_images = load_faces_from_folder(directory)
+
+    # Initialize fp value
     false_positives = 0
 
+    # Loop through each face and predict whether or not it is a face
     for image in nonface_images:
-        dataset = 3
-        detected_faces = detect_faces_cascade(image, cascade)
-        if detected_faces and len(detected_faces) > 0:
+        score = boosted_predict_cascade(image, cascade, 0)
+        if score > 0:
             false_positives += 1
 
     return false_positives
@@ -419,8 +432,8 @@ if __name__ == "__main__":
     #     visualize_detections(image_path, detected_faces, visualizations_dir)
 
     # # Precision and recall for nonfaces
-    # fp_nonfaces = test_nonfaces(nonfaces_dir, model)
-    # tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces
+    fp_nonfaces = test_nonfaces(nonfaces_dir, model)
+    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces
 
     # for file_name, _ in load_test_images(nonfaces_dir):
     #     image_path = os.path.join(nonfaces_dir, file_name)
@@ -436,6 +449,6 @@ if __name__ == "__main__":
     print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}")
     print(f"Precision: {precision_cropped:.2f}, Recall: {recall_cropped:.2f}")
 
-    # print("\nDataset: Test Nonfaces")
-    # print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
-    # print("Precision and recall are not applicable for the nonfaces dataset.")
+    print("\nDataset: Test Nonfaces")
+    print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
+    print("Precision and recall are not applicable for the nonfaces dataset.")
