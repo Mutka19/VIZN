@@ -13,7 +13,7 @@ import time
 
 
 dataset=1
-image_path =""
+image_pathglobal =""
 
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
@@ -75,15 +75,28 @@ def load_test_images(directory):
 
 
 def test_cropped_faces(directory, cascade):
+    """
+    Predicts labels for test_cropped_faces dataset
+    Parameters:
+    - directory: directory containing cropped face images.
+    - cascade: a list of cascade stages containing the boosted 
+      classifiers and the associated weak classifiers
+    Returns:
+    - true_positives: number of true positives.
+    - false_negatives: number of false negatives.
+    """
+
+    # Loads test images from folders
     cropped_images = load_faces_from_folder(directory)
+
+    # Initialize tp and fp values
     true_positives = 0
     false_negatives = 0
 
+    # Loop through each image and predict whether or not it is a face
     for image in cropped_images:
-        dataset = 2
-        #print("CROPPED IMAGE, ", directory)
-        detected_faces = detect_faces_cascade(image, cascade)
-        if detected_faces and len(detected_faces) > 0:
+        score = boosted_predict_cascade(image, cascade, 0)
+        if score > 0:
             true_positives += 1
         else:
             false_negatives += 1
@@ -182,7 +195,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 #prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade):
+def boosted_predict_cascade(image, cascade, threshold=0):
     """
     Classify a set of instances (images) using a cascade of boosted models.
     Parameters:
@@ -200,10 +213,11 @@ def boosted_predict_cascade(image, cascade):
         # print(f"Processing Stage {stage_number}")
         score = boosted_predict(image, boosted_classifier, weak_classifiers)
         
-        if score <= 0.0003:
+        if score <= threshold:
             break
 
     return score
+
 
 
 
@@ -218,13 +232,13 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     if dataset == 1 or dataset == 3:
         rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
         # print(os.path.basename(image_path), " is the image name")
-        fileName = os.path.basename(image_path)
+        fileName = os.path.basename(image_pathglobal)
        
         # #output_mask_name = f'skin_mask_{image}.JPG'
         output_dir = "important_outputs/skins/" + fileName
         # print(output_dir)
-        print(image_path)
-        mask = skin_detect(image_path, output_dir)
+        print(image_pathglobal)
+        mask = skin_detect(image_pathglobal, output_dir)
         #mask = cv.imread(output_dir, cv.IMREAD_GRAYSCALE)
         skin_image = cv.bitwise_and(rgb_image, rgb_image, mask=mask)
         gray_image = cv.cvtColor(skin_image, cv.COLOR_RGB2GRAY)
@@ -232,15 +246,15 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     else:
         gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-    _, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].imshow(rgb_image)
-    axes[0].axis('off')
-    axes[0].set_title("Original Image")
-    axes[1].imshow(mask, cmap="gray")
-    axes[1].axis('off')
-    axes[1].set_title("Skin Detection Result")
-    plt.tight_layout()
-    plt.show(block=True)
+    # _, axes = plt.subplots(1, 2, figsize=(10, 5))
+    # axes[0].imshow(rgb_image)
+    # axes[0].axis('off')
+    # axes[0].set_title("Original Image")
+    # axes[1].imshow(mask, cmap="gray")
+    # axes[1].axis('off')
+    # axes[1].set_title("Skin Detection Result")
+    # plt.tight_layout()
+    # plt.show(block=True)
 
     # Initial window size should match the trained classifier input
     window_size = (25, 31)
@@ -356,11 +370,11 @@ if __name__ == "__main__":
     for annotation in annotations:
         photo_file_name = annotation['photo_file_name']
         true_faces = annotation['faces']
-        image_path = os.path.join(face_photos_dir, photo_file_name)
-        image = cv.imread(image_path)
+        image_pathglobal = os.path.join(face_photos_dir, photo_file_name)
+        image = cv.imread(image_pathglobal)
 
         if image is None:
-            print(f"Failed to load image: {image_path}")
+            print(f"Failed to load image: {image_pathglobal}")
             continue
 
         dataset = 1
@@ -397,21 +411,21 @@ if __name__ == "__main__":
     tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, model)
     precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, 0, fn_cropped)
 
-    visualizations_dir = os.path.join(output_dir, 'visualizations')
+    # visualizations_dir = os.path.join(output_dir, 'visualizations')
     # Visualize Test Cropped Faces Dataset
-    for file_name, _ in load_test_images(cropped_faces_dir):
-        image_path = os.path.join(cropped_faces_dir, file_name)
-        detected_faces = detect_faces_cascade(cv.imread(image_path), model)
-        visualize_detections(image_path, detected_faces, visualizations_dir)
+    # for file_name, _ in load_test_images(cropped_faces_dir):
+    #     image_path = os.path.join(cropped_faces_dir, file_name)
+    #     detected_faces = detect_faces_cascade(cv.imread(image_path), model)
+    #     visualize_detections(image_path, detected_faces, visualizations_dir)
 
-    # Precision and recall for nonfaces
-    fp_nonfaces = test_nonfaces(nonfaces_dir, model)
-    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces
+    # # Precision and recall for nonfaces
+    # fp_nonfaces = test_nonfaces(nonfaces_dir, model)
+    # tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces
 
-    for file_name, _ in load_test_images(nonfaces_dir):
-        image_path = os.path.join(nonfaces_dir, file_name)
-        detected_faces = detect_faces_cascade(cv.imread(image_path), model)
-        visualize_detections(image_path, detected_faces, visualizations_dir)
+    # for file_name, _ in load_test_images(nonfaces_dir):
+    #     image_path = os.path.join(nonfaces_dir, file_name)
+    #     detected_faces = detect_faces_cascade(cv.imread(image_path), model)
+    #     visualize_detections(image_path, detected_faces, visualizations_dir)
 
     # Output performance metrics
     print("\nDataset: Test Face Photos")
@@ -422,6 +436,6 @@ if __name__ == "__main__":
     print(f"True Positives: {tp_cropped}, False Negatives: {fn_cropped}")
     print(f"Precision: {precision_cropped:.2f}, Recall: {recall_cropped:.2f}")
 
-    print("\nDataset: Test Nonfaces")
-    print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
-    print("Precision and recall are not applicable for the nonfaces dataset.")
+    # print("\nDataset: Test Nonfaces")
+    # print(f"False Positives: {fp_nonfaces}, True Negatives: {tn_nonfaces}")
+    # print("Precision and recall are not applicable for the nonfaces dataset.")
