@@ -10,8 +10,8 @@ def test_cropped_faces(directory, cascade):
     false_negatives = 0
 
     for image in cropped_images:
-        detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        detected_faces = boosted_predict_cascade(image, cascade, 0)
+        if detected_faces > 0:
             true_positives += 1
         else:
             false_negatives += 1
