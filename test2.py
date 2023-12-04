@@ -1,18 +1,19 @@
 import os
 import cv2 as cv
 import pickle
-from config import data_directory, training_directory
-from boosting import boosted_predict
-from skin_detection import skin_detect
+from config import data_directory, training_directory, important_outputs
+from src.boosting import boosted_predict
 from train import load_faces_from_folder
 import matplotlib.pyplot as plt
 import importlib.util
 import numpy as np
-from nms import prepare_boxes, cpu_soft_nms_float,nms_float_fast, nms, normalize_boxes
+from src.nms import prepare_boxes, cpu_soft_nms_float,nms_float_fast, nms, normalize_boxes
+from src.newSkin import skin_detect
+import time
 
 
 dataset=1
-
+image_path =""
 
 # Importing face annotations dynamically from a given file path
 def import_annotations(annotations_path):
@@ -212,25 +213,34 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     detected_faces = []
     detected_scores = []
     # Convert to RGB for skin detection
-    
+    gray_image = None
     # Get and apply skin mask
     if dataset == 1 or dataset == 3:
         rgb_image = cv.cvtColor(image, cv.COLOR_BGR2RGB)
-        mask = skin_detect(rgb_image)
+        # print(os.path.basename(image_path), " is the image name")
+        fileName = os.path.basename(image_path)
+       
+        # #output_mask_name = f'skin_mask_{image}.JPG'
+        output_dir = "important_outputs/skins/" + fileName
+        # print(output_dir)
+        print(image_path)
+        mask = skin_detect(image_path, output_dir)
+        #mask = cv.imread(output_dir, cv.IMREAD_GRAYSCALE)
         skin_image = cv.bitwise_and(rgb_image, rgb_image, mask=mask)
         gray_image = cv.cvtColor(skin_image, cv.COLOR_RGB2GRAY)
+        
     else:
         gray_image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-    # _, axes = plt.subplots(1, 2, figsize=(10, 5))
-    # axes[0].imshow(rgb_image)
-    # axes[0].axis('off')
-    # axes[0].set_title("Original Image")
-    # axes[1].imshow(skin_image, cmap="gray")
-    # axes[1].axis('off')
-    # axes[1].set_title("Skin Detection Result")
-    # plt.tight_layout()
-    # plt.show(block=True)
+    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+    axes[0].imshow(rgb_image)
+    axes[0].axis('off')
+    axes[0].set_title("Original Image")
+    axes[1].imshow(mask, cmap="gray")
+    axes[1].axis('off')
+    axes[1].set_title("Skin Detection Result")
+    plt.tight_layout()
+    plt.show(block=True)
 
     # Initial window size should match the trained classifier input
     window_size = (25, 31)
@@ -329,7 +339,7 @@ def calculate_precision_recall(true_positives, false_positives, false_negatives)
 if __name__ == "__main__":
     # Datasets and model loading
     face_photos_dir = os.path.join(data_directory, 'test_face_photos')
-    output_dir = os.path.join(data_directory, 'output')
+    output_dir = os.path.join(important_outputs, 'outputAdvanced')
     cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
     nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
 
