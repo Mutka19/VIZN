@@ -1,7 +1,7 @@
 import os
 import cv2 as cv
 import pickle
-from config import data_directory, training_directory, important_outputs
+from config import data_directory, training_directory
 from src.boosting import boosted_predict
 from train import load_faces_from_folder
 import matplotlib.pyplot as plt
@@ -212,7 +212,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
 if __name__ == "__main__":
     # Datasets and model loading
     face_photos_dir = os.path.join(data_directory, 'test_face_photos')
-    output_dir = os.path.join(important_outputs, 'outputAdvanced')
+    output_dir = os.path.join('important_outputs', 'outputAdvanced')
     cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
     nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
 
@@ -241,27 +241,26 @@ if __name__ == "__main__":
         detected_faces = detect_faces_cascade(image, model)
         # print("after all is said and done we have ", len(detected_faces), " bounding boxes")
         # print("first bounding box ", detected_faces[0])
-        filtered_detected_faces = [box for box in detected_faces if isinstance(
-            box, (list, np.ndarray)) and len(box) == 4]
+        filtered_detected_faces = [box for box in detected_faces if isinstance(box, (list, np.ndarray)) and len(box) == 4]
 
-            detected_flags = [False] * len(true_faces)
+        detected_flags = [False] * len(true_faces)
 
-            for detected_box in filtered_detected_faces:
-                match_found = False
-                for idx, true_box in enumerate(true_faces):
-                    iou = calculate_iou(detected_box, true_box)
-                    if iou > 0.5:
-                        tp_face_photos += 1
-                        detected_flags[idx] = True
-                        match_found = True
-                        break
-                if not match_found:
-                    fp_face_photos += 1
+        for detected_box in filtered_detected_faces:
+            match_found = False
+            for idx, true_box in enumerate(true_faces):
+                iou = calculate_iou(detected_box, true_box)
+                if iou > 0.5:
+                    tp_face_photos += 1
+                    detected_flags[idx] = True
+                    match_found = True
+                    break
+            if not match_found:
+                fp_face_photos += 1
 
-            cv.rectangle(image, (detected_box[0], detected_box[1]),
+        cv.rectangle(image, (detected_box[0], detected_box[1]),
                          (detected_box[2], detected_box[3]), (0, 255, 0), 2)
 
-            fn_face_photos += detected_flags.count(False)
+        fn_face_photos += detected_flags.count(False)
 
         output_path = os.path.join(output_dir, photo_file_name)
         cv.imwrite(output_path, image)

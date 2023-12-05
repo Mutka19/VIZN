@@ -17,7 +17,7 @@ def import_annotations(annotations_path):
 if __name__ == "__main__":
     # Datasets
     face_photos_dir = os.path.join(data_directory, 'test_face_photos')
-    output_dir = os.path.join(important_outputs, 'outputBasic')
+    output_dir = os.path.join('important_outputs', 'outputBasic')
     cropped_faces_dir = os.path.join(data_directory, 'test_cropped_faces')
     nonfaces_dir = os.path.join(data_directory, 'test_nonfaces')
 
