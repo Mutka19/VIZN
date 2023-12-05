@@ -5,13 +5,28 @@ from src.processing import load_faces_from_folder
 from src.skin_detection import skin_detect
 
 def test_cropped_faces(directory, cascade):
+    """
+    Predicts labels for test_cropped_faces dataset
+    Parameters:
+    - directory: directory containing cropped face images.
+    - cascade: a list of cascade stages containing the boosted 
+      classifiers and the associated weak classifiers
+    Returns:
+    - true_positives: number of true positives.
+    - false_negatives: number of false negatives.
+    """
+
+    # Loads test images from folders
     cropped_images = load_faces_from_folder(directory)
+
+    # Initialize tp and fp values
     true_positives = 0
     false_negatives = 0
 
+    # Loop through each image and predict whether or not it is a face
     for image in cropped_images:
-        detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        score = boosted_predict_cascade(image, cascade, 0)
+        if score > 0:
             true_positives += 1
         else:
             false_negatives += 1
@@ -19,12 +34,26 @@ def test_cropped_faces(directory, cascade):
     return true_positives, false_negatives
 
 def test_nonfaces(directory, cascade):
+    """
+    Predicts labels for test_nonfaces dataset
+    Parameters:
+    - directory: directory containing nonface images.
+    - cascade: a list of cascade stages containing the boosted 
+      classifiers and the associated weak classifiers
+    Returns:
+    - false_positives: number of false positives.
+    """
+    
+    # Loads test images from folders
     nonface_images = load_faces_from_folder(directory)
+
+    # Initialize fp value
     false_positives = 0
 
+    # Loop through each face and predict whether or not it is a face
     for image in nonface_images:
-        detected_faces = detect_faces_cascade(image, cascade)
-        if len(detected_faces) > 0:
+        score = boosted_predict_cascade(image, cascade, 0)
+        if score > 0:
             false_positives += 1
 
     return false_positives
@@ -109,7 +138,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 #prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade, threshold):
+def boosted_predict_cascade(image, cascade, threshold=0):
     """
     Classify a set of instances (images) using a cascade of boosted models.
     Parameters:

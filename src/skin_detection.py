@@ -43,6 +43,7 @@ def get_skin_stats():
     return r_mean, g_mean, r_std, g_std
 
 
+
 # Function to fill holes specifically in the head region
 def fill_head_holes(mask, head_contour):
     mask_filled = np.zeros_like(mask)
@@ -55,6 +56,7 @@ def fill_head_holes(mask, head_contour):
     mask_filled = cv.morphologyEx(mask_filled, cv.MORPH_CLOSE, kernel)
 
     return mask_filled
+
 
 
 def skin_detect(image):
@@ -110,6 +112,7 @@ def skin_detect(image):
     return mask_morph
 
 
+
 def get_nonskin_stats():
     data = np.loadtxt("skin_data/UCI_Skin_NonSkin.txt")
     red = []
@@ -135,6 +138,7 @@ def get_nonskin_stats():
     g_std = np.std(green2)
 
     return r_mean, g_mean, r_std, g_std
+
 
 
 def nonskin_detect(image):
@@ -189,5 +193,6 @@ def nonskin_detect(image):
     mask_morph = cv.morphologyEx(mask_binary, cv.MORPH_CLOSE, kernel, iterations=4)
     mask_morph = cv.erode(mask_morph, kernel, iterations=1)
     
+    # Return mask
     # Return mask
     return mask_morph

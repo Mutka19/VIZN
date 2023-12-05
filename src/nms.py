@@ -36,85 +36,77 @@ def prepare_boxes(boxes, scores, labels):
 
 def cpu_soft_nms_float(dets, sc, Nt, sigma, thresh, method):
     """
-    Based on: https://github.com/DocF/Soft-NMS/blob/master/soft_nms.py
-    It's different from original soft-NMS because we have float coordinates on range [0; 1]
+    Soft-NMS implementation that favors larger boxes.
 
     :param dets:   boxes format [x1, y1, x2, y2]
     :param sc:     scores for boxes
-    :param Nt:     required iou 
-    :param sigma:  
-    :param thresh: 
-    :param method: 1 - linear soft-NMS, 2 - gaussian soft-NMS, 3 - standard NMS
-    :return: index of boxes to keep
+    :param Nt:     required IoU
+    :param sigma:  Gaussian sigma for Soft-NMS
+    :param thresh: score threshold for keeping boxes
+    :param method: 1 - linear, 2 - gaussian, 3 - original NMS
+    :return: indices of boxes to keep
     """
 
-    # indexes concatenate boxes with the last column
     N = dets.shape[0]
     indexes = np.array([np.arange(N)])
     dets = np.concatenate((dets, indexes.T), axis=1)
 
-    # the order of boxes coordinate is [y1, x1, y2, x2]
-    y1 = dets[:, 1]
-    x1 = dets[:, 0]
-    y2 = dets[:, 3]
-    x2 = dets[:, 2]
-    scores = sc
-    areas = (x2 - x1) * (y2 - y1)
+    # Compute the area of each box
+    areas = (dets[:, 2] - dets[:, 0]) * (dets[:, 3] - dets[:, 1])
 
-    for i in range(N):
-        # intermediate parameters for later parameters exchange
-        tBD = dets[i, :].copy()
-        tscore = scores[i].copy()
-        tarea = areas[i].copy()
-        pos = i + 1
+    keep = []
+    while dets.shape[0] > 0:
+        # Take the box with the highest score
+        max_score_index = np.argmax(dets[:, 4])
+        max_score_det = dets[max_score_index]
+        max_score_area = areas[max_score_index]
+        keep.append(max_score_det[-1])
 
-        #
-        if i != N - 1:
-            maxscore = np.max(scores[pos:], axis=0)
-            maxpos = np.argmax(scores[pos:], axis=0)
-        else:
-            maxscore = scores[-1]
-            maxpos = 0
-        if tscore < maxscore:
-            dets[i, :] = dets[maxpos + i + 1, :]
-            dets[maxpos + i + 1, :] = tBD
-            tBD = dets[i, :]
-
-            scores[i] = scores[maxpos + i + 1]
-            scores[maxpos + i + 1] = tscore
-            tscore = scores[i]
-
-            areas[i] = areas[maxpos + i + 1]
-            areas[maxpos + i + 1] = tarea
-            tarea = areas[i]
-
-        # IoU calculate
-        xx1 = np.maximum(dets[i, 1], dets[pos:, 1])
-        yy1 = np.maximum(dets[i, 0], dets[pos:, 0])
-        xx2 = np.minimum(dets[i, 3], dets[pos:, 3])
-        yy2 = np.minimum(dets[i, 2], dets[pos:, 2])
+        # Compute IoU of the remaining boxes with the max score box
+        xx1 = np.maximum(dets[:, 0], max_score_det[0])
+        yy1 = np.maximum(dets[:, 1], max_score_det[1])
+        xx2 = np.minimum(dets[:, 2], max_score_det[2])
+        yy2 = np.minimum(dets[:, 3], max_score_det[3])
 
         w = np.maximum(0.0, xx2 - xx1)
         h = np.maximum(0.0, yy2 - yy1)
         inter = w * h
-        ovr = inter / (areas[i] + areas[pos:] - inter)
+        ovr = inter / (areas + max_score_area - inter)
 
-        # Three methods: 1.linear 2.gaussian 3.original NMS
-        if method == 1:  # linear
-            weight = np.ones(ovr.shape)
-            weight[ovr > Nt] = weight[ovr > Nt] - ovr[ovr > Nt]
-        elif method == 2:  # gaussian
-            weight = np.exp(-(ovr * ovr) / sigma)
-        else:  # original NMS
-            weight = np.ones(ovr.shape)
-            weight[ovr > Nt] = 0
+        # Suppress boxes that overlap significantly with the max score box
+        if method == 1:
+            # Linear decay on the scores of overlapping boxes
+            weights = np.ones(dets.shape[0])
+            weights[ovr > Nt] -= ovr[ovr > Nt]
+        elif method == 2:
+            # Gaussian decay on the scores of overlapping boxes
+            weights = np.exp(-((ovr * ovr) / sigma))
+        else:
+            # Original NMS
+            weights = (ovr <= Nt).astype(float)
 
-        scores[pos:] = weight * scores[pos:]
+        # Make sure 'weights' is a floating-point array
+        weights = weights.astype(np.float64)
 
-    # select the boxes and keep the corresponding indexes
-    inds = dets[:, 4][scores > thresh]
-    keep = inds.astype(int)
+        # Perform the multiplication
+        dets[:, 4] = dets[:, 4] * weights
+
+
+        #ADDED MAY COMMENT OUT LATER
+        # Favor larger boxes by comparing the area
+        larger_boxes = np.where((ovr > Nt) & (areas > max_score_area))[0]
+        if larger_boxes.size > 0:
+            dets[max_score_index, 4] = 0  # Suppress the current max score box
+            dets[larger_boxes, 4] = sc[larger_boxes]  # Restore the original scores for larger boxes
+
+
+        # Keep boxes with a score above the threshold
+        remaining_indices = np.where(dets[:, 4] > thresh)[0]
+        dets = dets[remaining_indices]
+        areas = areas[remaining_indices]
+
     return keep
+
 
 
 
@@ -270,44 +262,3 @@ def soft_nms(boxes, scores, labels, method=2, iou_thr=0.5, sigma=0.5, thresh=0.0
     return nms_method(boxes, scores, labels, method=method, iou_thr=iou_thr, sigma=sigma, thresh=thresh, weights=weights)
 
 
-if __name__ == "__main__":
-    # Define your input data (example data)
-    boxes = np.array([[0.1, 0.2, 0.8, 0.7], [0.0, 0.0, -0.2, 0.6], [0.9, 1.1, 1.2, 1.3]])
-    scores = np.array([0.9, 0.8, 0.7])
-    labels = np.array([1, 2, 3])
-
-    # Call the prepare_boxes function
-    result_boxes, result_scores, result_labels = prepare_boxes(boxes, scores, labels)
-
-    # Print the results
-    print("Original Boxes:")
-    print(boxes)
-    print("Original Scores:")
-    print(scores)
-    print("Original Labels:")
-    print(labels)
-
-    print("\nProcessed Boxes:")
-    print(result_boxes)
-    print("Processed Scores:")
-    print(result_scores)
-    print("Processed Labels:")
-    print(result_labels)
-
-
-
-    # Prepare example bounding boxes and scores
-    boxes = np.array([[100, 100, 200, 200], [150, 150, 250, 250], [300, 300, 400, 400]])
-    scores = np.array([0.9, 0.85, 0.92])
-
-    # Parameters for NMS
-    overlapThresh = 0.3
-    sigma = 0.5
-    min_score = 0.8
-    method = "standard NMS"
-
-    # Apply NMS
-    filtered_boxes = cpu_soft_nms_float(boxes, scores, overlapThresh, sigma, min_score, method)
-
-    # filtered_boxes now contains the filtered bounding boxes
-    print(filtered_boxes)
