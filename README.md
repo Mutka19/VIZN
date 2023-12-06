@@ -67,7 +67,7 @@ Original Photo
 
 | Basic Skin Mask | Advanced Skin Mask | Basic Test | Advanced Test |
 | :---: | :---: | :---: | :---: |
-| Basic Skin Mask | <img src="important_outputs/skins/DSC01181.JPG" width="200"> | <img src="important_outputs/outputBasic/DSC01181.JPG" width="200"> | <img src="important_outputs/outputAdvanced/DSC01181.JPG" width="200"> |
+| <img src="important_outputs/basic_Skins/DSC01181.JPG" width="200"> | <img src="important_outputs/skins/DSC01181.JPG" width="200"> | <img src="important_outputs/outputBasic/DSC01181.JPG" width="200"> | <img src="important_outputs/outputAdvanced/DSC01181.JPG" width="200"> |
 
 
 
