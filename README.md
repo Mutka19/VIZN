@@ -58,3 +58,17 @@ For a(n) advanced test
 python testing.py 2
 ```
 
+## Results
+
+
+Original Photo
+<img src="data/test_face_photos/DSC01181.JPG">
+
+
+| Basic Skin Mask | Advanced Skin Mask | Basic Test | Advanced Test |
+| :---: | :---: | :---: | :---: |
+| Basic Skin Mask | <img src="important_outputs/skins/DSC01181.JPG" width="200"> | <img src="important_outputs/outputBasic/DSC01181.JPG" width="200"> | <img src="important_outputs/outputAdvanced/DSC01181.JPG" width="200"> |
+
+
+
+
