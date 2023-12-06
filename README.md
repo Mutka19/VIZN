@@ -48,12 +48,12 @@ python train.py
 
 To run the tests make sure your in the main directory, not src, and run the following command:
 
-for a(n) basic test
+For a(n) basic test
 ```bash
 python testing.py 1
 ```
 
-for a(n) advanced test
+For a(n) advanced test
 ```bash
 python testing.py 2
 ```
