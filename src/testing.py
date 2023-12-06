@@ -73,7 +73,7 @@ def calculate_iou(boxA, boxB):
     # Areas of individual boxes
     boxA_area = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
     boxB_area = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
-
+    
     # Compute IoU
     iou = intersection_area / float(boxA_area + boxB_area - intersection_area)
     return iou
@@ -216,7 +216,7 @@ def detect_faces_cascade(image, cascade, scale_factor=1.25, step_size=5, overlap
     return detected_faces
 
 
-def calculate_precision_recall(true_positives, false_positives, false_negatives):
+def calculate_precision_recall(true_positives, false_positives, false_negatives=0):
     """
     Calculate precision and recall from true positives, false positives, and false negatives.
     """
