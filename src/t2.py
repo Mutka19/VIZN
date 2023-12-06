@@ -1,16 +1,19 @@
 import os
 import cv2 as cv
 import pickle
-from config import data_directory, training_directory, important_outputs
-from src.boosting import boosted_predict
-from train import load_faces_from_folder
+from boosting import boosted_predict
 import matplotlib.pyplot as plt
 import importlib.util
 import numpy as np
-from src.nms import prepare_boxes, cpu_soft_nms_float, nms_float_fast, nms, normalize_boxes
-from src.newSkin import skin_detect
+from nms import prepare_boxes, cpu_soft_nms_float, nms_float_fast, nms, normalize_boxes
+from newSkin import skin_detect
 import time
-from src.testing import boosted_predict_cascade, calculate_iou, calculate_precision_recall
+from testing import boosted_predict_cascade, calculate_iou, calculate_precision_recall
+
+import sys
+sys.path.insert(1, os.path.dirname(sys.path[0]))
+from config import data_directory, training_directory, important_outputs
+from train import load_faces_from_folder
 
 
 dataset = 1

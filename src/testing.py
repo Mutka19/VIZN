@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-from src.boosting import boosted_predict
-from src.processing import load_faces_from_folder
-from src.skin_detection import skin_detect
+from boosting import boosted_predict
+from processing import load_faces_from_folder
+from skin_detection import skin_detect
 
 def test_cropped_faces(directory, cascade):
     """
