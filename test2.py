@@ -259,12 +259,10 @@ if __name__ == "__main__":
                         detected_flags[idx] = True
                     match_found = True
                     break
-        if not match_found:
-            fp_face_photos += 1
-
             cv.rectangle(image, (detected_box[0], detected_box[1]),
                          (detected_box[2], detected_box[3]), (0, 255, 0), 2)
-
+        if not match_found:
+            fp_face_photos += 1
         
 
         output_path = os.path.join(output_dir, photo_file_name)
