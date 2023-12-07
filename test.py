@@ -3,28 +3,32 @@ import subprocess
 import time
 
 def main():
-    # Check if the user has provided an argument
-    if len(sys.argv) != 2:
-        print("Usage: python launcher.py '1' OR '2'")
-        print("Use 1 for basic testing")
-        print("Use 2 for advanced testing")
-        print("Same training and datasets, it's just the testing functionlity/methodology is different")
-        sys.exit(1)
+    # Ask the user for their operating system
+    print("Select your operating system:")
+    print("1: Windows")
+    print("2: Linux")
+    os_choice = input("Enter your choice (1/2): ").strip()
 
-    # Get the argument passed by the user
-    arg = sys.argv[1]
+    # Decide which Python command to use based on the operating system choice
+    python_command = 'python3' if os_choice == '2' else 'python'
 
-    # Decide which script to run based on the argument
-    if arg == '1':
+    # Ask the user for the type of testing
+    print("Select the type of testing:")
+    print("1: Basic Testing")
+    print("2: Advanced Testing")
+    test_choice = input("Enter your choice (1/2): ").strip()
+
+    # Decide which script to run based on the user's choice
+    if test_choice == '1':
         print("Running testing script for BASIC testing")
         time.sleep(3)
-        subprocess.run(['python', 'src/t1.py'])
-    elif arg == '2':
+        subprocess.run([python_command, 'src/t1.py'])
+    elif test_choice == '2':
         print("Running testing script for ADVANCED testing")
         time.sleep(3)
-        subprocess.run(['python', 'src/t2.py'])
+        subprocess.run([python_command, 'src/t2.py'])
     else:
-        print("Invalid argument. Please use 1 or 2.")
+        print("Invalid testing choice. Please use 1 or 2.")
         sys.exit(1)
 
 if __name__ == "__main__":
