@@ -5,24 +5,24 @@ Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 ## File list
 - `README.md` - This file
 - `.gitignore` - This file tells git which files to ignore.
-- `.train` - Called to train and output a pkl of the trained data 
-- `.testing` - Used along with a 1 or 2 to call either test1 or test 2 
-- `.test1` - Basic training programs for the trained face detector
-- `.test2` - Advanced traning programs for the trained face detector
-- `.requirements` - Where the needed imports are located
-- `.config.py` - Holds directory locations
-- `.face_detection_model.pkl` - Facial detection model based off of just AdaBoosting
-- `.face_detection_cascade.pkl` - Facial detection model using AdaBoost and cascade clasifiers
-- `.sampleTestPyResults.txt` - Where the results are stored from the test programs
-- `.testing.py (in src)` -
-- `.skin_detection.py` - Used to create a(n) basic skin detection mask to use along with the trained model
-- `.processing.py` -
-- `.nms.py` -
-- `.newSkin.py` - Used to create a(n) advanced skin mask using the UCI histogram
-- `.model.py` - This file is holds the functions to save, load, or train the model
-- `.cascade.py` - 
-- `.boosting.py` - File used to cunduct the AdaBoosting technique 
-- `.UCI_Skin_NonSkin.txt` - Histogram for skin and non-skin data
+- `train.py` - Called to train and output a pkl of the trained data 
+- `test.py` - Used along with a 1 or 2 to call either test1 or test 2 
+- `test1.py` - Basic training programs for the trained face detector
+- `test2.py` - Advanced traning programs for the trained face detector
+- `requirements.txt` - Where the needed imports are located
+- `config.py` - Holds directory locations
+- `face_detection_model.pkl` - Facial detection model based off of just AdaBoosting
+- `face_detection_cascade.pkl` - Facial detection model using AdaBoost and cascade clasifiers
+- `sampleTestPyResults.txt` - Where the results are stored from the test programs
+- `testing.py (in src)` -
+- `skin_detection.py` - Used to create a(n) basic skin detection mask to use along with the trained model
+- `processing.py` -
+- `nms.py` -
+- `newSkin.py` - Used to create a(n) advanced skin mask using the UCI histogram
+- `model.py` - This file is holds the functions to save, load, or train the model
+- `cascade.py` - 
+- `boosting.py` - File used to cunduct the AdaBoosting technique 
+- `UCI_Skin_NonSkin.txt` - Histogram for skin and non-skin data
 - `/important_outputs` - In the folder is where the basic and advanced data goes, along with the detected skin
 
 ## Setting up the environment
