@@ -19,9 +19,9 @@ Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 - `.processing.py` -
 - `.nms.py` -
 - `.newSkin.py` - Used to create a(n) advanced skin mask using the UCI histogram
-- `.model.py` -
-- `.cascade.py` -
-- `.boosting.py` -
+- `.model.py` - This file is holds the functions to save, load, or train the model
+- `.cascade.py` - 
+- `.boosting.py` - File used to cunduct the AdaBoosting technique 
 - `.UCI_Skin_NonSkin.txt` - Histogram for skin and non-skin data
 - `/important_outputs` - In the folder is where the basic and advanced data goes, along with the detected skin
 
