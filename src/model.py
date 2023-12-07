@@ -1,10 +1,10 @@
 import os
 import numpy as np
 import cv2 as cv
-from src.boosting import integral_image
-from src.boosting import generate_classifier
-from src.boosting import eval_weak_classifier
-from src.boosting import adaboost
+from boosting import integral_image
+from boosting import generate_classifier
+from boosting import eval_weak_classifier
+from boosting import adaboost
 import pickle
 
 import sys
@@ -43,7 +43,7 @@ def load_model(model_name='face_detection_model.pkl'):
     return model_data
 
 
-def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizontal=25, num_classifiers = 15):
+def train_model(faces, nonfaces, weak_count=1000, face_vertical=31, face_horizontal=25, num_classifiers=15):
     """
     Trains an AdaBoost model on the given data.
     Args:
