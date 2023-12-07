@@ -1,11 +1,10 @@
 import os
 import numpy as np
 import cv2 as cv
-from boosting import integral_image
-from boosting import generate_classifier
-from boosting import eval_weak_classifier
-from boosting import adaboost
-from model import *
+from src.boosting import integral_image
+from src.boosting import generate_classifier
+from src.boosting import eval_weak_classifier
+from src.boosting import adaboost
 import pickle
 
 import sys
