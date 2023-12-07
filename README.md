@@ -14,9 +14,9 @@ Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 - `face_detection_model.pkl` - Facial detection model based off of just AdaBoosting
 - `face_detection_cascade.pkl` - Facial detection model using AdaBoost and cascade clasifiers
 - `sampleTestPyResults.txt` - Where the results are stored from the test programs
-- `testing.py` -
+- `testing.py` - Where testing of cropped faces, and non face images are cunducted using a cascade of boosted clasifiers
 - `skin_detection.py` - Used to create a(n) basic skin detection mask to use along with the trained model
-- `processing.py` -
+- `processing.py` - where functionalities to load and process data is located 
 - `nms.py` -
 - `newSkin.py` - Used to create a(n) advanced skin mask using the UCI histogram
 - `model.py` - This file is holds the functions to save, load, or train the model
