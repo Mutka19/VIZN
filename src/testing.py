@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-from src.boosting import boosted_predict
-from src.processing import load_faces_from_folder
-from src.skin_detection import skin_detect
+from boosting import boosted_predict
+from processing import load_faces_from_folder
+from skin_detection import skin_detect
 
 def test_cropped_faces(directory, cascade):
     """
@@ -33,7 +33,7 @@ def test_cropped_faces(directory, cascade):
 
     return true_positives, false_negatives
 
-def test_nonfaces(directory, cascade):
+def test_nonfaces(directory, cascade, threshold=0.1):
     """
     Predicts labels for test_nonfaces dataset
     Parameters:
@@ -53,7 +53,7 @@ def test_nonfaces(directory, cascade):
     # Loop through each face and predict whether or not it is a face
     for image in nonface_images:
         score = boosted_predict_cascade(image, cascade, 0)
-        if score > 0:
+        if score > threshold:
             false_positives += 1
 
     return false_positives
@@ -138,7 +138,7 @@ def non_max_suppression_fast(boxes, overlapThresh):
 
 
 #prob should be moved to boosting file but had import problems
-def boosted_predict_cascade(image, cascade, threshold=0):
+def boosted_predict_cascade(image, cascade, threshold=0.0):
     """
     Classify a set of instances (images) using a cascade of boosted models.
     Parameters:

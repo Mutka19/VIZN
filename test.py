@@ -18,11 +18,11 @@ def main():
     if arg == '1':
         print("Running testing script for BASIC testing")
         time.sleep(3)
-        subprocess.run(['python', 'test1.py'])
+        subprocess.run(['python', 'src/t1.py'])
     elif arg == '2':
         print("Running testing script for ADVANCED testing")
         time.sleep(3)
-        subprocess.run(['python', 'test2.py'])
+        subprocess.run(['python', 'src/t2.py'])
     else:
         print("Invalid argument. Please use 1 or 2.")
         sys.exit(1)

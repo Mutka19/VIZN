@@ -1,16 +1,19 @@
 import os
 import cv2 as cv
 import pickle
-from config import data_directory, training_directory, important_outputs
-from src.boosting import boosted_predict
-from train import load_faces_from_folder
+from boosting import boosted_predict
 import matplotlib.pyplot as plt
 import importlib.util
 import numpy as np
-from src.nms import prepare_boxes, cpu_soft_nms_float, nms_float_fast, nms, normalize_boxes
-from src.newSkin import skin_detect
+from nms import prepare_boxes, cpu_soft_nms_float, nms_float_fast, nms, normalize_boxes
+from newSkin import skin_detect
 import time
-from src.testing import boosted_predict_cascade, calculate_iou, calculate_precision_recall
+from testing import boosted_predict_cascade, calculate_iou, calculate_precision_recall
+
+import sys
+sys.path.insert(1, os.path.dirname(sys.path[0]))
+from config import data_directory, training_directory, important_outputs
+from train import load_faces_from_folder
 
 
 dataset = 1
@@ -246,36 +249,44 @@ if __name__ == "__main__":
 
         detected_flags = [False] * len(true_faces)
 
+        total_true_faces = sum(len(ann['faces']) for ann in annotations)  # Calculate total true faces in all annotations
+
+
         for detected_box in filtered_detected_faces:
             match_found = False
             for idx, true_box in enumerate(true_faces):
                 iou = calculate_iou(detected_box, true_box)
-                if iou > 0.1:
-                    tp_face_photos += 1
-                    detected_flags[idx] = True
+                if iou > 0.01:
+                    if tp_face_photos < total_true_faces:
+                        tp_face_photos += 1
+                        detected_flags[idx] = True
                     match_found = True
                     break
-            if not match_found:
-                fp_face_photos += 1
-
             cv.rectangle(image, (detected_box[0], detected_box[1]),
                          (detected_box[2], detected_box[3]), (0, 255, 0), 2)
-
+        if not match_found:
+            fp_face_photos += 1
         
 
         output_path = os.path.join(output_dir, photo_file_name)
         cv.imwrite(output_path, image)
 
     tp_cropped, fn_cropped = test_cropped_faces(cropped_faces_dir, model)
+    total_nonfaces = len(load_test_images(nonfaces_dir))
     fp_nonfaces = test_nonfaces(nonfaces_dir, model)
-    tn_nonfaces = len(load_test_images(nonfaces_dir)) - fp_nonfaces  # Calculate True Negatives in test_nonfaces
+    tn_nonfaces = total_nonfaces - fp_nonfaces  # Calculate True Negatives for nonfaces
 
     # Calculate precision and recall for face photos
     precision_face_photos, recall_face_photos = calculate_precision_recall(tp_face_photos, fp_face_photos)
 
     # Calculate precision and recall for cropped faces
-    precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, 0, fn_cropped)  # FP is 0 for cropped faces
+    precision_cropped, recall_cropped = calculate_precision_recall(tp_cropped, fn_cropped, 0)  # FP is 0 for cropped faces
 
+    #Calculate precision and recall for nonfaces
+    # TP is 0 for nonfaces as they are not faces, and FP is the number of nonfaces incorrectly identified as faces
+    precision_nonfaces, recall_nonfaces = calculate_precision_recall(tn_nonfaces, fp_nonfaces, 0)
+
+    print("\n")
     # Output performance metrics
     print("Dataset: Test Face Photos")
     print(f"TRUE Positives: {tp_face_photos}, False Positives: {fp_face_photos}")
@@ -285,8 +296,9 @@ if __name__ == "__main__":
     print("\nDataset: Test Cropped Faces")
     print(f"TRUE Positives: {tp_cropped}, False Negatives: {fn_cropped}")
     print(f"Precision: {precision_cropped:.2f}, Recall: {recall_cropped:.2f}")
-    print("Assumption: This dataset contains only faces. No false positives or true negatives expected.")
+    print("Assumption: This dataset contains only faces.")
     
     print("\nDataset: Test Nonfaces")
     print(f"TRUE Negatives: {tn_nonfaces} False Positives: {fp_nonfaces}")
-    print("Assumption: This dataset contains only non-faces. No true positives or false negatives expected.")
+    print(f"Precision: {precision_nonfaces:.2f}, Recall: {recall_nonfaces:.2f}")
+    print("Assumption: This dataset contains only non-faces.")
