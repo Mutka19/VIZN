@@ -1,6 +1,6 @@
-# FinalProjectCV
+# VIZN: Illuminating Faces
 ### Colaborators
-Jacob Mccalip, Daemon Henry Mutka, julio cantu
+Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 
 ## File list
 - `README.md` - This file
@@ -11,14 +11,14 @@ Jacob Mccalip, Daemon Henry Mutka, julio cantu
 - `.test2` - Advanced traning programs for the trained face detector
 - `.requirements` - Where the needed imports are located
 - `.config.py` - Holds directory locations
-- `.face_detection_model.pkl` -
-- `.face_detection_cascade.pkl` -
+- `.face_detection_model.pkl` - Facial detection model based off of just AdaBoosting
+- `.face_detection_cascade.pkl` - Facial detection model using AdaBoost and cascade clasifiers
 - `.sampleTestPyResults.txt` - Where the results are stored from the test programs
 - `.testing.py (in src)` -
-- `.skin_detection.py` -
+- `.skin_detection.py` - Used to create a(n) basic skin detection mask to use along with the trained model
 - `.processing.py` -
 - `.nms.py` -
-- `.newSkin.py` -
+- `.newSkin.py` - Used to create a(n) advanced skin mask using the UCI histogram
 - `.model.py` -
 - `.cascade.py` -
 - `.boosting.py` -
