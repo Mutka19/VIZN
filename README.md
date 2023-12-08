@@ -2,6 +2,10 @@
 ### Colaborators
 Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 
+## About VISN
+
+Our final machine vision project, VIZN, was made with the intention to collectively use what we learned in class to detect faces from different images. To do so we used Adaboost as the backbone and Cascade Classifiers as its framework to build the trained model. For detecting we also implemented a Skin Detection functionality to heavily reduce the data the model will need to sort through. (holder) 
+
 ## File list
 - `README.md` - This file
 - `.gitignore` - This file tells git which files to ignore.
@@ -24,6 +28,10 @@ Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 - `boosting.py` - File used to cunduct the AdaBoosting technique 
 - `UCI_Skin_NonSkin.txt` - Histogram for skin and non-skin data
 - `/important_outputs` - In the folder is where the basic and advanced data goes, along with the detected skin
+
+## flowchart of application
+
+
 
 ## Setting up the environment
 
