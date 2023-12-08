@@ -5,7 +5,7 @@ Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 
 ## About VISN
 
-Our final machine vision project, VIZN, was made with the intention to collectively use what we learned in class to detect faces from different images. To do so we used Adaboost as the backbone and Cascade Classifiers as its framework to build the trained model. For detecting we also implemented a Skin Detection functionality to heavily reduce the data the model will need to sort through. (holder) 
+Our final machine vision project, VIZN, was made with the intention to collectively use what we learned in class to detect faces from different images. To do so we used Adaboost as the backbone and Cascade Classifiers as its framework to build the trained model. For detecting we also implemented a Skin Detection functionality to heavily reduce the data the model will need to sort through.
 
 ## File list
 - `README.md` - This file
@@ -62,15 +62,17 @@ python train.py
 
 To run the tests make sure your in the main directory, not src, and run the following command:
 
-For a(n) basic test
 ```bash
-python test.py 1
+python test.py
 ```
 
-For a(n) advanced test
-```bash
-python test.py 2
-```
+After, you will a prompt that will ask if you are on Windows (1) or Linux (2) and will be asked to put in an input 
+
+Placed cropped image of prompt here
+
+Following you will recive another prompt asking if you would like to comence the Basic Testing (1) or the Advanced Testing (2)
+
+Placed cropped image of prompt here
 
 ## Results
 
