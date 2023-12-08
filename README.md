@@ -64,12 +64,12 @@ To run the tests make sure your in the main directory, not src, and run the foll
 
 For a(n) basic test
 ```bash
-python testing.py 1
+python test.py 1
 ```
 
 For a(n) advanced test
 ```bash
-python testing.py 2
+python test.py 2
 ```
 
 ## Results
