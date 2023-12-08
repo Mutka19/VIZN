@@ -1,4 +1,5 @@
-# VIZN: Illuminating Faces
+#  <img src="Visuals/Icon/VIZN.webp" width="50"> VIZN: Illuminating Faces 
+
 ### Colaborators
 Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 
