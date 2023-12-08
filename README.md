@@ -68,11 +68,11 @@ python test.py
 
 After, you will a prompt that will ask if you are on Windows (1) or Linux (2) and will be asked to put in an input 
 
-<img src="Visuals/testingPrompts/prompt1.png">
+<img src="Visuals/testingPrompts/prompt1.png" width="350">
 
 Following you will recive another prompt asking if you would like to comence the Basic Testing (1) or the Advanced Testing (2)
 
-<img src="Visuals/testingPrompts/prompt2.png">
+<img src="Visuals/testingPrompts/prompt2.png" width="350">
 
 ## Results
 
