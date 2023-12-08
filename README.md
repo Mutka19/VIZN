@@ -31,7 +31,12 @@ Our final machine vision project, VIZN, was made with the intention to collectiv
 
 ## flowchart of application
 
-
+<p align="center">
+Original Photo
+</p>
+<p align="center">
+<img src="Visuals/flowcharts/fullFlow.webp">
+</p>
 
 ## Setting up the environment
 
