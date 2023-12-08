@@ -73,5 +73,32 @@ Original Photo
 | <img src="important_outputs/basic_Skins/DSC01181.webp" width="250"> | <img src="important_outputs/skins/DSC01181.JPG" width="250"> | <img src="important_outputs/outputBasic/DSC01181.JPG" width="250"> | <img src="important_outputs/outputAdvanced/DSC01181.JPG" width="250"> |
 
 
+<p align="center">
+Original Photo
+</p>
+<p align="center">
+<img src="data/test_face_photos/obama8.jpg">
+</p>
+
+
+| Basic Skin Mask | Advanced Skin Mask | Basic Test | Advanced Test |
+| :---: | :---: | :---: | :---: |
+| <img src="important_outputs/basic_Skins/obama8.webp" width="250"> | <img src="important_outputs/skins/obama8.jpg" width="250"> | <img src="important_outputs/outputBasic/obama8.jpg" width="250"> | <img src="important_outputs/outputAdvanced/obama8.jpg" width="250"> |
+
+
+
+<p align="center">
+Original Photo
+</p>
+<p align="center">
+<img src="data/test_face_photos/DSC04545.JPG">
+</p>
+
+
+| Basic Skin Mask | Advanced Skin Mask | Basic Test | Advanced Test |
+| :---: | :---: | :---: | :---: |
+| <img src="important_outputs/basic_Skins/DSC04545.JPG" width="250"> | <img src="important_outputs/skins/DSC04545.JPG" width="250"> | <img src="important_outputs/outputBasic/DSC04545.JPG" width="250"> | <img src="important_outputs/outputAdvanced/DSC04545.JPG" width="250"> |
+
+
 
 
