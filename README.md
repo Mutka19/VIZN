@@ -3,7 +3,7 @@
 ### Colaborators
 Jacob Mccalip, Daemon Henry Mutka, Julio cantu
 
-## About VISN
+## About VIZN
 
 Our final machine vision project, VIZN, was made with the intention to collectively use what we learned in class to detect faces from different images. To do so we used Adaboost as the backbone and Cascade Classifiers as its framework to build the trained model. For detecting we also implemented a Skin Detection functionality to heavily reduce the data the model will need to sort through.
 
